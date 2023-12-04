@@ -1,4 +1,4 @@
-<svelte:options tag="pixeleria-editor" />
+<svelte:options customElement="pixeleria-editor" />
 
 <script>
 </script>
