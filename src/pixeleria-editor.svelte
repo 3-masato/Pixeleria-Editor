@@ -1,8 +1,23 @@
-<svelte:options customElement="pixeleria-editor" />
+<!-- https://github.com/sveltejs/svelte/issues/9189#issuecomment-1794764745 -->
+<svelte:options customElement={{
+  tag: "pixeleria-editor",
+  // @ts-ignore
+  extend: (customElementConstructor) => {
+    return class extends customElementConstructor {
+      constructor() {
+        super();
+        this.component = this;
+      }
+    };
+  }
+}} />
 
 <script lang="ts">
   import { onMount } from "svelte";
   import { PixelArtEditor } from "./canvas";
+  import { getVectorDataFromCanvas } from "./pixel";
+
+  export let component: HTMLElement;
 
   export let artWidth: number = 64;
   export let artHeight: number = 64;
@@ -14,7 +29,7 @@
 
   let pressed = false;
 
-  const pointerdown = (e: PointerEvent) => {
+  const onPointerDown = (e: PointerEvent) => {
     pressed = true;
     
     const { clientX, clientY } = e;
@@ -22,7 +37,7 @@
     editor.draw(coords.x, coords.y);
   }
 
-  const pointermove = (e: PointerEvent) => {
+  const onPointerMove = (e: PointerEvent) => {
     if (!pressed) return;
 
     const { clientX, clientY } = e;
@@ -30,9 +45,17 @@
     editor.draw(coords.x, coords.y);
   }
 
-  const pointerup = (e: PointerEvent) => {
+  const onPointerUp = (e: PointerEvent) => {
     pressed = false;
   }
+
+  const dispatch = <T>(name:string, detail: T) => {
+    component.dispatchEvent(new CustomEvent(name, { detail }));
+  };
+
+  const onSave = () => {
+    dispatch("save", getVectorDataFromCanvas(drawCanvas));
+  };
 
   onMount(() => {
     editor = new PixelArtEditor(drawCanvas, {
@@ -52,14 +75,17 @@
     <canvas
       id="draw-canvas"
       bind:this={drawCanvas}
-      on:pointerdown={pointerdown}
-      on:pointermove={pointermove}
-      on:pointerup={pointerup}
+      on:pointerdown={onPointerDown}
+      on:pointermove={onPointerMove}
+      on:pointerup={onPointerUp}
     />
   </div>
   <div id="tools">
     <div id="colors">
       <input type="color" bind:value={pickedColor} />
+    </div>
+    <div id="save">
+      <button on:click={onSave}>Save</button>
     </div>
   </div>
 </div>
