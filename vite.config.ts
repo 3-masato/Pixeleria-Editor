@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite'
-import { svelte } from '@sveltejs/vite-plugin-svelte'
+import { svelte } from "@sveltejs/vite-plugin-svelte";
+import { defineConfig } from "vite";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -12,12 +12,12 @@ export default defineConfig({
   plugins: [
     svelte({
       compilerOptions: {
-        customElement: true
-      }
-    })
+        customElement: true,
+      },
+    }),
   ],
   server: {
     // Ports available in the AWS Cloud9 environment are 8080, 8081, or 8082.
-    port: 8081
-  }
-})
+    port: 8081,
+  },
+});
