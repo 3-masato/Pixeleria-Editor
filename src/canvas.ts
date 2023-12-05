@@ -12,6 +12,7 @@ export class PixelArtEditor {
   width: number;
   height: number;
   dotSize: number;
+  color: string = "#000000";
 
   constructor(canvas: HTMLCanvasElement, option: PixelArtEditorOption) {
     this.canvas = canvas;
@@ -35,9 +36,13 @@ export class PixelArtEditor {
     this.ctx.imageSmoothingEnabled = false;
   }
 
+  setColor(color: string) {
+    this.color = color;
+  }
+
   draw(x: number, y: number) {
     this.ctx.save();
-    this.ctx.fillStyle = "#ff0000";
+    this.ctx.fillStyle = this.color;
     this.ctx.fillRect(x, y, 1, 1);
     this.ctx.restore();
   }

@@ -10,6 +10,7 @@
   
   let drawCanvas: HTMLCanvasElement;
   let editor: PixelArtEditor;
+  let pickedColor: string = "#000000";
 
   let pressed = false;
 
@@ -40,16 +41,27 @@
       dotSize
     });
   });
+
+  $: if (editor) {
+    editor.setColor(pickedColor);
+  }
 </script>
 
 <div id="main-container">
-  <canvas
-    id="draw-canvas"
-    bind:this={drawCanvas}
-    on:pointerdown={pointerdown}
-    on:pointermove={pointermove}
-    on:pointerup={pointerup}
-  />
+  <div id="canvas-area">
+    <canvas
+      id="draw-canvas"
+      bind:this={drawCanvas}
+      on:pointerdown={pointerdown}
+      on:pointermove={pointermove}
+      on:pointerup={pointerup}
+    />
+  </div>
+  <div id="tools">
+    <div id="colors">
+      <input type="color" bind:value={pickedColor} />
+    </div>
+  </div>
 </div>
 
 <style>
@@ -58,5 +70,18 @@
   canvas {
     image-rendering: pixelated;
     outline: 1px solid black;
+  }
+
+  #main-container {
+    display: grid;
+    grid-template-areas: "canvas tools";
+  }
+
+  #canvas-area {
+    grid-area: canvas;
+  }
+
+  #tools {
+    grid-area: tools;
   }
 </style>
