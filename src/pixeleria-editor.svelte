@@ -4,6 +4,10 @@
   import { onMount } from "svelte";
   import { PixelArtEditor } from "./canvas";
 
+  export let artWidth: number = 64;
+  export let artHeight: number = 64;
+  export let dotSize: number = 16;
+  
   let drawCanvas: HTMLCanvasElement;
   let editor: PixelArtEditor;
 
@@ -29,18 +33,10 @@
     pressed = false;
   }
 
-  const width = 64;
-  const height = 64;
-
-  const dotSize = 16;
-
-  const canvasWidth = width * dotSize;
-  const canvasHeight = height * dotSize;
-
   onMount(() => {
     editor = new PixelArtEditor(drawCanvas, {
-      width,
-      height,
+      width: artWidth,
+      height: artHeight,
       dotSize
     });
   });
@@ -49,8 +45,6 @@
 <div id="main-container">
   <canvas
     id="draw-canvas"
-    width={canvasWidth}
-    height={canvasHeight}
     bind:this={drawCanvas}
     on:pointerdown={pointerdown}
     on:pointermove={pointermove}
@@ -62,6 +56,7 @@
   :host {
   }
   canvas {
+    image-rendering: pixelated;
     outline: 1px solid black;
   }
 </style>
