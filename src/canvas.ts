@@ -1,5 +1,10 @@
 import type { PaintMode, Vec2 } from "./type";
 
+export type PixelArtEditorOption = {
+  width: number;
+  height: number;
+  dotSize: number;
+};
 export class PixelArtEditor {
   mode: PaintMode = "pen";
   canvas: HTMLCanvasElement;
@@ -7,15 +12,9 @@ export class PixelArtEditor {
   width: number;
   height: number;
   dotSize: number;
+  color: string = "#000000";
 
-  constructor(
-    canvas: HTMLCanvasElement,
-    option: {
-      width: number;
-      height: number;
-      dotSize: number;
-    }
-  ) {
+  constructor(canvas: HTMLCanvasElement, option: PixelArtEditorOption) {
     this.canvas = canvas;
 
     const ctx = this.canvas.getContext("2d");
@@ -30,13 +29,20 @@ export class PixelArtEditor {
     this.height = option.height;
     this.dotSize = option.dotSize;
 
-    this.ctx.scale(option.dotSize, option.dotSize);
+    this.canvas.width = this.width * this.dotSize;
+    this.canvas.height = this.height * this.dotSize;
+
+    this.ctx.scale(this.dotSize, this.dotSize);
     this.ctx.imageSmoothingEnabled = false;
+  }
+
+  setColor(color: string) {
+    this.color = color;
   }
 
   draw(x: number, y: number) {
     this.ctx.save();
-    this.ctx.fillStyle = "#ff0000";
+    this.ctx.fillStyle = this.color;
     this.ctx.fillRect(x, y, 1, 1);
     this.ctx.restore();
   }

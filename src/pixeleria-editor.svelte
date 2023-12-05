@@ -4,8 +4,13 @@
   import { onMount } from "svelte";
   import { PixelArtEditor } from "./canvas";
 
+  export let artWidth: number = 64;
+  export let artHeight: number = 64;
+  export let dotSize: number = 16;
+  
   let drawCanvas: HTMLCanvasElement;
   let editor: PixelArtEditor;
+  let pickedColor: string = "#000000";
 
   let pressed = false;
 
@@ -29,39 +34,54 @@
     pressed = false;
   }
 
-  const width = 64;
-  const height = 64;
-
-  const dotSize = 16;
-
-  const canvasWidth = width * dotSize;
-  const canvasHeight = height * dotSize;
-
   onMount(() => {
     editor = new PixelArtEditor(drawCanvas, {
-      width,
-      height,
+      width: artWidth,
+      height: artHeight,
       dotSize
     });
   });
+
+  $: if (editor) {
+    editor.setColor(pickedColor);
+  }
 </script>
 
 <div id="main-container">
-  <canvas
-    id="draw-canvas"
-    width={canvasWidth}
-    height={canvasHeight}
-    bind:this={drawCanvas}
-    on:pointerdown={pointerdown}
-    on:pointermove={pointermove}
-    on:pointerup={pointerup}
-  />
+  <div id="canvas-area">
+    <canvas
+      id="draw-canvas"
+      bind:this={drawCanvas}
+      on:pointerdown={pointerdown}
+      on:pointermove={pointermove}
+      on:pointerup={pointerup}
+    />
+  </div>
+  <div id="tools">
+    <div id="colors">
+      <input type="color" bind:value={pickedColor} />
+    </div>
+  </div>
 </div>
 
 <style>
   :host {
   }
   canvas {
+    image-rendering: pixelated;
     outline: 1px solid black;
+  }
+
+  #main-container {
+    display: grid;
+    grid-template-areas: "canvas tools";
+  }
+
+  #canvas-area {
+    grid-area: canvas;
+  }
+
+  #tools {
+    grid-area: tools;
   }
 </style>
