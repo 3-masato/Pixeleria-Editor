@@ -27,28 +27,6 @@
   let editor: PixelArtEditor;
   let pickedColor: string = "#000000";
 
-  let pressed = false;
-
-  const onPointerDown = (e: PointerEvent) => {
-    pressed = true;
-    
-    const { clientX, clientY } = e;
-    const coords = editor.getRelativeCoord(clientX, clientY);
-    editor.draw(coords.x, coords.y);
-  }
-
-  const onPointerMove = (e: PointerEvent) => {
-    if (!pressed) return;
-
-    const { clientX, clientY } = e;
-    const coords = editor.getRelativeCoord(clientX, clientY);
-    editor.draw(coords.x, coords.y);
-  }
-
-  const onPointerUp = (e: PointerEvent) => {
-    pressed = false;
-  }
-
   const dispatch = <T>(name:string, detail: T) => {
     component.dispatchEvent(new CustomEvent(name, { detail }));
   };
@@ -75,9 +53,6 @@
     <canvas
       id="draw-canvas"
       bind:this={drawCanvas}
-      on:pointerdown={onPointerDown}
-      on:pointermove={onPointerMove}
-      on:pointerup={onPointerUp}
     />
   </div>
   <div id="tools">
