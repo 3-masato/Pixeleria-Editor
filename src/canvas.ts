@@ -1,3 +1,4 @@
+import { getVectorDataFromCanvas, type PixelData } from "./pixel";
 import type { PaintMode, Vec2 } from "./type";
 
 export type PixelArtEditorOption = {
@@ -6,16 +7,24 @@ export type PixelArtEditorOption = {
   dotSize: number;
 };
 
-export class PixelCanvas {
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D;
-  /** CSS color string */
-  color: string = "#000000";
+export type PixelArtEventMap = {
+  save: PixelData[];
+};
 
-  constructor(canvas: HTMLCanvasElement) {
+export class PixelCanvas {
+  readonly canvas: HTMLCanvasElement;
+  readonly ctx: CanvasRenderingContext2D;
+
+  /** CSS color string */
+  private _color: string = "#000000";
+
+  constructor(
+    canvas: HTMLCanvasElement,
+    contextOption?: CanvasRenderingContext2DSettings
+  ) {
     this.canvas = canvas;
 
-    const ctx = this.canvas.getContext("2d");
+    const ctx = this.canvas.getContext("2d", contextOption);
     if (ctx === null) {
       throw new Error(
         "Failed to get the 2D context. Ensure the canvas element is correctly initialized and your browser supports the 2D context."
@@ -25,7 +34,30 @@ export class PixelCanvas {
     this.ctx = ctx;
   }
 
-  draw(x: number, y: number) {
+  set width(width: number) {
+    this.canvas.width = width;
+  }
+
+  get width(): number {
+    return this.canvas.width;
+  }
+
+  set height(height: number) {
+    this.canvas.height = height;
+  }
+
+  get height(): number {
+    return this.canvas.height;
+  }
+
+  set color(color: string) {
+    this._color = color;
+  }
+  get color(): string {
+    return this._color;
+  }
+
+  draw(x: number, y: number): void {
     this.ctx.save();
     this.ctx.fillStyle = this.color;
     this.ctx.fillRect(x, y, 1, 1);
@@ -33,12 +65,22 @@ export class PixelCanvas {
   }
 }
 
+class VirtualCanvas extends PixelCanvas {
+  constructor() {
+    const canvas = document.createElement("canvas");
+    super(canvas, {
+      willReadFrequently: true,
+    });
+  }
+}
+
 export class PixelArtEditor extends PixelCanvas {
   mode: PaintMode = "pen";
-  width: number;
-  height: number;
+  artWidth: number;
+  artHeight: number;
   dotSize: number;
-  color: string = "#000000";
+
+  readonly vCanvas: VirtualCanvas;
 
   private pressed = false;
 
@@ -47,18 +89,20 @@ export class PixelArtEditor extends PixelCanvas {
   private lastY: number | null = null;
 
   // イベントリスナーへの参照を保持するために使用する。
-  private boundOnPointerMove: (e: PointerEvent) => void;
-  private boundOnPointerUp: (e: PointerEvent) => void;
+  private readonly boundOnPointerMove: (e: PointerEvent) => void;
+  private readonly boundOnPointerUp: (e: PointerEvent) => void;
 
   constructor(canvas: HTMLCanvasElement, option: PixelArtEditorOption) {
     super(canvas);
 
-    this.width = option.width;
-    this.height = option.height;
+    this.artWidth = option.width;
+    this.artHeight = option.height;
     this.dotSize = option.dotSize;
 
-    this.canvas.width = this.width * this.dotSize;
-    this.canvas.height = this.height * this.dotSize;
+    this.vCanvas = new VirtualCanvas();
+
+    this.width = this.artWidth * this.dotSize;
+    this.height = this.artHeight * this.dotSize;
 
     this.ctx.scale(this.dotSize, this.dotSize);
     this.ctx.imageSmoothingEnabled = false;
@@ -66,6 +110,15 @@ export class PixelArtEditor extends PixelCanvas {
     this.canvas.addEventListener("pointerdown", (e) => this.onPointerDown(e));
     this.boundOnPointerMove = this.onPointerMove.bind(this);
     this.boundOnPointerUp = this.onPointerUp.bind(this);
+  }
+
+  setColor(color: string) {
+    this.vCanvas.color = this.color = color;
+  }
+
+  draw(x: number, y: number): void {
+    super.draw(x, y);
+    this.vCanvas.draw(x, y);
   }
 
   getRelativeCoord(x: number, y: number): Vec2 {
@@ -77,18 +130,22 @@ export class PixelArtEditor extends PixelCanvas {
     };
   }
 
-  private onPointerDown(e: PointerEvent) {
+  getVectorData(): PixelData[] {
+    return getVectorDataFromCanvas(this.vCanvas.canvas);
+  }
+
+  private onPointerDown(e: PointerEvent): void {
     this.pressed = true;
     this.setPointerEventHandlers(e);
     this.processDrawing(e);
   }
 
-  private onPointerMove(e: PointerEvent) {
+  private onPointerMove(e: PointerEvent): void {
     if (!this.pressed) return;
     this.processDrawing(e);
   }
 
-  private onPointerUp(e: PointerEvent) {
+  private onPointerUp(e: PointerEvent): void {
     this.pressed = false;
     this.lastX = null;
     this.lastY = null;
@@ -98,7 +155,7 @@ export class PixelArtEditor extends PixelCanvas {
   /**
    * canvas にポインターイベントハンドラを設定する。
    */
-  private setPointerEventHandlers(e: PointerEvent) {
+  private setPointerEventHandlers(e: PointerEvent): void {
     this.canvas.setPointerCapture(e.pointerId);
     this.canvas.addEventListener("pointermove", this.boundOnPointerMove);
     this.canvas.addEventListener("pointerup", this.boundOnPointerUp);
@@ -107,7 +164,7 @@ export class PixelArtEditor extends PixelCanvas {
   /**
    * canvas に設定したポインターイベントハンドラを削除する。
    */
-  private removePointerEventHandlers(e: PointerEvent) {
+  private removePointerEventHandlers(e: PointerEvent): void {
     this.canvas.releasePointerCapture(e.pointerId);
     this.canvas.removeEventListener("pointermove", this.boundOnPointerMove);
     this.canvas.removeEventListener("pointerup", this.boundOnPointerUp);
@@ -116,7 +173,7 @@ export class PixelArtEditor extends PixelCanvas {
   /**
    * 座標を計算して canvas 上にドットを描画する処理。
    */
-  private processDrawing(e: PointerEvent) {
+  private processDrawing(e: PointerEvent): void {
     const coords = this.getRelativeCoord(e.clientX, e.clientY);
     if (this.lastX !== null && this.lastY !== null) {
       this.drawInterpolatePoints(this.lastX, this.lastY, coords.x, coords.y);
@@ -130,7 +187,12 @@ export class PixelArtEditor extends PixelCanvas {
    * ブレゼンハムの線分描画アルゴリズムを利用して2点間のドットを補間を行い描画する。
    * マウスを素早く動かしたときにドットが飛び飛びになるのを防ぐために使用。
    */
-  private drawInterpolatePoints(x0: number, y0: number, x1: number, y1: number) {
+  private drawInterpolatePoints(
+    x0: number,
+    y0: number,
+    x1: number,
+    y1: number
+  ): void {
     const dx = Math.abs(x1 - x0);
     const dy = Math.abs(y1 - y0);
     const sx = x0 < x1 ? 1 : -1;
