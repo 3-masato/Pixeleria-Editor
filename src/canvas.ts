@@ -5,10 +5,36 @@ export type PixelArtEditorOption = {
   height: number;
   dotSize: number;
 };
-export class PixelArtEditor {
-  mode: PaintMode = "pen";
+
+export class PixelCanvas {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
+  /** CSS color string */
+  color: string = "#000000";
+
+  constructor(canvas: HTMLCanvasElement) {
+    this.canvas = canvas;
+
+    const ctx = this.canvas.getContext("2d");
+    if (ctx === null) {
+      throw new Error(
+        "Failed to get the 2D context. Ensure the canvas element is correctly initialized and your browser supports the 2D context."
+      );
+    }
+
+    this.ctx = ctx;
+  }
+
+  draw(x: number, y: number) {
+    this.ctx.save();
+    this.ctx.fillStyle = this.color;
+    this.ctx.fillRect(x, y, 1, 1);
+    this.ctx.restore();
+  }
+}
+
+export class PixelArtEditor extends PixelCanvas {
+  mode: PaintMode = "pen";
   width: number;
   height: number;
   dotSize: number;
@@ -25,16 +51,8 @@ export class PixelArtEditor {
   private boundOnPointerUp: (e: PointerEvent) => void;
 
   constructor(canvas: HTMLCanvasElement, option: PixelArtEditorOption) {
-    this.canvas = canvas;
+    super(canvas);
 
-    const ctx = this.canvas.getContext("2d");
-    if (ctx === null) {
-      throw new Error(
-        "Failed to get the 2D context. Ensure the canvas element is correctly initialized and your browser supports the 2D context."
-      );
-    }
-
-    this.ctx = ctx;
     this.width = option.width;
     this.height = option.height;
     this.dotSize = option.dotSize;
@@ -48,17 +66,6 @@ export class PixelArtEditor {
     this.canvas.addEventListener("pointerdown", (e) => this.onPointerDown(e));
     this.boundOnPointerMove = this.onPointerMove.bind(this);
     this.boundOnPointerUp = this.onPointerUp.bind(this);
-  }
-
-  setColor(color: string) {
-    this.color = color;
-  }
-
-  draw(x: number, y: number) {
-    this.ctx.save();
-    this.ctx.fillStyle = this.color;
-    this.ctx.fillRect(x, y, 1, 1);
-    this.ctx.restore();
   }
 
   getRelativeCoord(x: number, y: number): Vec2 {
@@ -107,12 +114,12 @@ export class PixelArtEditor {
   }
 
   /**
-   * 座標を計算してcanvas上にドットを描画する処理。
+   * 座標を計算して canvas 上にドットを描画する処理。
    */
   private processDrawing(e: PointerEvent) {
     const coords = this.getRelativeCoord(e.clientX, e.clientY);
     if (this.lastX !== null && this.lastY !== null) {
-      this.interpolatePoints(this.lastX, this.lastY, coords.x, coords.y);
+      this.drawInterpolatePoints(this.lastX, this.lastY, coords.x, coords.y);
     }
     this.draw(coords.x, coords.y);
     this.lastX = coords.x;
@@ -120,10 +127,10 @@ export class PixelArtEditor {
   }
 
   /**
-   * ブレゼンハムの線分描画アルゴリズムを利用して2点間のドットを補間を行う。
+   * ブレゼンハムの線分描画アルゴリズムを利用して2点間のドットを補間を行い描画する。
    * マウスを素早く動かしたときにドットが飛び飛びになるのを防ぐために使用。
    */
-  private interpolatePoints(x0: number, y0: number, x1: number, y1: number) {
+  private drawInterpolatePoints(x0: number, y0: number, x1: number, y1: number) {
     const dx = Math.abs(x1 - x0);
     const dy = Math.abs(y1 - y0);
     const sx = x0 < x1 ? 1 : -1;

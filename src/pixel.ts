@@ -5,12 +5,12 @@ export type PixelData = {
 };
 
 export function getVectorDataFromCanvas(canvas: HTMLCanvasElement): PixelData[] {
-  const context = canvas.getContext("2d");
-  if (!context) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
     throw new Error("Unable to get canvas context");
   }
 
-  const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = imageData.data;
   const vectorData: PixelData[] = [];
 
@@ -39,15 +39,15 @@ export function drawOnCanvas(
   vectorData: PixelData[],
   canvas: HTMLCanvasElement
 ): void {
-  const context = canvas.getContext("2d");
-  if (!context) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
     throw new Error("Unable to get canvas context");
   }
 
-  context.clearRect(0, 0, canvas.width, canvas.height); // キャンバスをクリア
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   vectorData.forEach((pixel) => {
-    context.fillStyle = pixel.color;
-    context.fillRect(pixel.x, pixel.y, 1, 1); // 1ピクセルの四角形を描画
+    ctx.fillStyle = pixel.color;
+    ctx.fillRect(pixel.x, pixel.y, 1, 1);
   });
 }

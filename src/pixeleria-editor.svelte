@@ -1,4 +1,5 @@
-<!-- https://github.com/sveltejs/svelte/issues/9189#issuecomment-1794764745 -->
+<!-- Get the current component without using the non-public `get_current_component` function. -->
+<!-- See: https://github.com/sveltejs/svelte/issues/9189#issuecomment-1794764745 -->
 <svelte:options customElement={{
   tag: "pixeleria-editor",
   // @ts-ignore
@@ -44,7 +45,7 @@
   });
 
   $: if (editor) {
-    editor.setColor(pickedColor);
+    editor.color = pickedColor;
   }
 </script>
 
