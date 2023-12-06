@@ -1,5 +1,5 @@
 /**
- * `eventDispatcher` 関数は、カスタムイベントを発行するためのディスパッチャーを作成します。
+ * `createCustomEventDispatcher` 関数は、カスタムイベントを発行するためのディスパッチャーを作成します。
  *
  * @param component - イベントをディスパッチするHTMLElement。
  * @returns カスタムイベントをディスパッチする関数。
@@ -12,11 +12,11 @@
  *
  * 使用例：
  * ``` TypeScript
- * const dispatch = eventDispatcher<{ change: { value: string } }>(myElement);
+ * const dispatch = createCustomEventDispatcher<{ change: { value: string } }>(myElement);
  * dispatch('change', { value: 'newValue' }); // myElementに'change'イベントを発行
  * ```
  */
-export const eventDispatcher = <
+export const createCustomEventDispatcher = <
   EventMap extends Record<string, unknown>,
   EventKey extends Extract<keyof EventMap, string> = Extract<keyof EventMap, string>
 >(
