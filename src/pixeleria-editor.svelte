@@ -1,8 +1,24 @@
-<svelte:options customElement="pixeleria-editor" />
+<!-- Get the current component without using the non-public `get_current_component` function. -->
+<!-- See: https://github.com/sveltejs/svelte/issues/9189#issuecomment-1794764745 -->
+<svelte:options customElement={{
+  tag: "pixeleria-editor",
+  // @ts-ignore
+  extend: (customElementConstructor) => {
+    return class extends customElementConstructor {
+      constructor() {
+        super();
+        this.component = this;
+      }
+    };
+  }
+}} />
 
 <script lang="ts">
   import { onMount } from "svelte";
   import { PixelArtEditor } from "./canvas";
+  import { getVectorDataFromCanvas } from "./pixel";
+
+  export let component: HTMLElement;
 
   export let artWidth: number = 64;
   export let artHeight: number = 64;
@@ -12,27 +28,13 @@
   let editor: PixelArtEditor;
   let pickedColor: string = "#000000";
 
-  let pressed = false;
+  const dispatch = <T>(name:string, detail: T) => {
+    component.dispatchEvent(new CustomEvent(name, { detail }));
+  };
 
-  const pointerdown = (e: PointerEvent) => {
-    pressed = true;
-    
-    const { clientX, clientY } = e;
-    const coords = editor.getRelativeCoord(clientX, clientY);
-    editor.draw(coords.x, coords.y);
-  }
-
-  const pointermove = (e: PointerEvent) => {
-    if (!pressed) return;
-
-    const { clientX, clientY } = e;
-    const coords = editor.getRelativeCoord(clientX, clientY);
-    editor.draw(coords.x, coords.y);
-  }
-
-  const pointerup = (e: PointerEvent) => {
-    pressed = false;
-  }
+  const onSave = () => {
+    dispatch("save", getVectorDataFromCanvas(drawCanvas));
+  };
 
   onMount(() => {
     editor = new PixelArtEditor(drawCanvas, {
@@ -43,7 +45,7 @@
   });
 
   $: if (editor) {
-    editor.setColor(pickedColor);
+    editor.color = pickedColor;
   }
 </script>
 
@@ -52,14 +54,14 @@
     <canvas
       id="draw-canvas"
       bind:this={drawCanvas}
-      on:pointerdown={pointerdown}
-      on:pointermove={pointermove}
-      on:pointerup={pointerup}
     />
   </div>
   <div id="tools">
     <div id="colors">
       <input type="color" bind:value={pickedColor} />
+    </div>
+    <div id="save">
+      <button on:click={onSave}>Save</button>
     </div>
   </div>
 </div>
