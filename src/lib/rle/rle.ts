@@ -1,5 +1,11 @@
 import type { NumericArray } from "src/type";
 
+/**
+ * Encodes a numeric array using Run-Length Encoding (RLE).
+ *
+ * @param {NumericArray} inputArray - Array of numbers to encode.
+ * @returns {number[]} RLE encoded array.
+ */
 export const encodeRLE = (inputArray: NumericArray): number[] => {
   const length = inputArray.length;
   if (length === 0) return [];
@@ -22,6 +28,12 @@ export const encodeRLE = (inputArray: NumericArray): number[] => {
   return encodedArray;
 };
 
+/**
+ * Decodes an RLE encoded numeric array.
+ *
+ * @param {NumericArray} inputArray - RLE encoded array.
+ * @returns {number[]} Decoded array.
+ */
 export const decodeRLE = (inputArray: NumericArray): number[] => {
   const length = inputArray.length;
   if (length === 0) return [];
