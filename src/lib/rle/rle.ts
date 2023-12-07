@@ -1,4 +1,4 @@
-import type { NumericArray } from "src/type";
+import type { NumericArray } from "$types/shared";
 
 /**
  * Encodes a numeric array using Run-Length Encoding (RLE).
