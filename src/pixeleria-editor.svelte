@@ -31,7 +31,7 @@
   const dispatch = createCustomEventDispatcher<PixelArtEventMap>(component);
 
   const onSave = () => {
-    dispatch("save", editor.getVectorData());
+    dispatch("save", editor.getCompressedData());
   };
 
   onMount(() => {
