@@ -1,4 +1,4 @@
-import { encodeRLE } from "$lib/rle";
+import { decodeRLE, encodeRLE } from "$lib/rle";
 import type { PaintMode, Vec2 } from "$types/shared";
 
 export type PixelArtEditorOption = {
@@ -91,6 +91,32 @@ class VirtualCanvas extends PixelCanvas {
     const { data } = imageData;
 
     return this._compress(data.buffer, width, height);
+  }
+
+  decompressData(compressed: Uint32Array): { width: number; height: number } {
+    const width = compressed.at(-2)!;
+    const height = compressed.at(-1)!;
+
+    this.canvas.width = width;
+    this.canvas.height = height;
+
+    const compresserVersion = compressed[0];
+
+    if (this.COMPRESSER_VERSION !== compresserVersion) {
+      // TODO
+    }
+
+    const encodedArrayLength = compressed[1];
+    const encodedArray = compressed.slice(2, encodedArrayLength + 2);
+
+    const decodedArray = decodeRLE(encodedArray);
+
+    const imageData = this.ctx.createImageData(width, height);
+
+    imageData.data.set(decodedArray, 0);
+    this.ctx.putImageData(imageData, 0, 0);
+
+    return { width, height };
   }
 
   /**
