@@ -45,6 +45,12 @@ export class PixelArtEditor extends DrawCanvas {
     this.pCanvas.draw(x, y);
   }
 
+  erase(x: number, y: number): void {
+    super.erase(x, y);
+    this.vCanvas.erase(x, y);
+    this.pCanvas.erase(x, y);
+  }
+
   clear() {
     const confirmResult = window.confirm("Clear the canvas?");
 

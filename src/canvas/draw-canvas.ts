@@ -8,7 +8,7 @@ export type DrawCanvasOption = {
 };
 
 export class DrawCanvas extends PixelCanvas {
-  mode: PaintMode = "pen";
+  paintMode: PaintMode = "pen";
 
   readonly artWidth: number;
   readonly artHeight: number;
@@ -40,6 +40,20 @@ export class DrawCanvas extends PixelCanvas {
     this.canvas.addEventListener("pointerdown", (e) => this.onPointerDown(e));
     this.boundOnPointerMove = this.onPointerMove.bind(this);
     this.boundOnPointerUp = this.onPointerUp.bind(this);
+  }
+
+  private pointerAction(x: number, y: number): void {
+    switch (this.paintMode) {
+      case "pen": {
+        this.draw(x, y);
+        break;
+      }
+
+      case "erase": {
+        this.erase(x, y);
+        break;
+      }
+    }
   }
 
   private getRelativeCoord(x: number, y: number): Vec2 {
@@ -95,7 +109,7 @@ export class DrawCanvas extends PixelCanvas {
     if (this.lastX !== null && this.lastY !== null) {
       this.drawInterpolatePoints(this.lastX, this.lastY, coords.x, coords.y);
     }
-    this.draw(coords.x, coords.y);
+    this.pointerAction(coords.x, coords.y);
     this.lastX = coords.x;
     this.lastY = coords.y;
   }
@@ -117,7 +131,7 @@ export class DrawCanvas extends PixelCanvas {
     let err = dx - dy;
 
     while (true) {
-      this.draw(x0, y0);
+      this.pointerAction(x0, y0);
 
       if (x0 === x1 && y0 === y1) break;
       const e2 = 2 * err;

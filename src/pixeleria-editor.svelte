@@ -14,6 +14,7 @@
 }} />
 
 <script lang="ts">
+    
   import { onMount } from "svelte";
   import { PixelArtEditor, type PixelArtEventMap } from "./editor";
   import { createCustomEventDispatcher } from "./event";
@@ -67,6 +68,14 @@
   <div id="tools">
     <div id="previews">
       <canvas bind:this={previewCanvas}></canvas>
+    </div>
+    <div class="paint-modes">
+      <button id="pencil" on:click={() => {
+        editor.paintMode = "pen"
+      }}>Pencil</button> 
+      <button id="eraser" on:click={() => {
+        editor.paintMode = "erase"
+      }}>Eraser</button> 
     </div>
     <div id="colors">
       <input type="color" bind:value={pickedColor} />

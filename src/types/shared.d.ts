@@ -16,4 +16,4 @@ export type Vec2 = {
   y: number;
 };
 
-export type PaintMode = "pen";
+export type PaintMode = "pen" | "erase";
