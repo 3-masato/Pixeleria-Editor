@@ -51,4 +51,8 @@ export class PixelCanvas {
     this.ctx.fillRect(x, y, 1, 1);
     this.ctx.restore();
   }
+
+  clear(): void {
+    this.ctx.clearRect(0, 0, this.width, this.height);
+  }
 }

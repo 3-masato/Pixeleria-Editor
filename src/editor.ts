@@ -7,6 +7,7 @@ export type PixelArtEventMap = {
     pixelData: Uint32Array;
     imageData: string;
   };
+  clear: void;
 };
 
 export class PixelArtEditor extends DrawCanvas {
@@ -42,6 +43,16 @@ export class PixelArtEditor extends DrawCanvas {
     super.draw(x, y);
     this.vCanvas.draw(x, y);
     this.pCanvas.draw(x, y);
+  }
+
+  clear() {
+    const confirmResult = window.confirm("Clear the canvas?");
+
+    if (!confirmResult) return;
+
+    super.clear();
+    this.vCanvas.clear();
+    this.pCanvas.clear();
   }
 
   getCompressedData(): Uint32Array {
