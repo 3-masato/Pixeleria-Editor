@@ -39,6 +39,11 @@
     });
   };
 
+  const onClear = () => {
+    editor.clear();
+    dispatch("clear");
+  };
+
   onMount(() => {
     editor = new PixelArtEditor(drawCanvas, previewCanvas, {
       width: artWidth,
@@ -68,6 +73,7 @@
     </div>
     <div id="actions">
       <button id="save" on:click={onSave}>Save</button>
+      <button id="clear" on:click={onClear}>Clear</button>
     </div>
   </div>
 </div>
