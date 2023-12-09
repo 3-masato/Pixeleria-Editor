@@ -1,24 +1,18 @@
 import type { PaintMode, Vec2 } from "$types/shared";
-import { PixelCanvas } from "./canvas/pixel-canvas";
-import { VirtualCanvas } from "./canvas/virtual-canvas";
+import { PixelCanvas } from "./pixel-canvas";
 
-export type PixelArtEditorOption = {
+export type DrawCanvasOption = {
   width: number;
   height: number;
   dotSize: number;
 };
 
-export type PixelArtEventMap = {
-  save: Uint32Array;
-};
-
-export class PixelArtEditor extends PixelCanvas {
+export class DrawCanvas extends PixelCanvas {
   mode: PaintMode = "pen";
-  artWidth: number;
-  artHeight: number;
-  dotSize: number;
 
-  readonly vCanvas: VirtualCanvas;
+  readonly artWidth: number;
+  readonly artHeight: number;
+  readonly dotSize: number;
 
   private pressed = false;
 
@@ -30,17 +24,12 @@ export class PixelArtEditor extends PixelCanvas {
   private readonly boundOnPointerMove: (e: PointerEvent) => void;
   private readonly boundOnPointerUp: (e: PointerEvent) => void;
 
-  constructor(canvas: HTMLCanvasElement, option: PixelArtEditorOption) {
+  constructor(canvas: HTMLCanvasElement, option: DrawCanvasOption) {
     super(canvas);
 
     this.artWidth = option.width;
     this.artHeight = option.height;
     this.dotSize = option.dotSize;
-
-    this.vCanvas = new VirtualCanvas();
-    this.vCanvas.width = this.artWidth;
-    this.vCanvas.height = this.artHeight;
-    this.vCanvas.color = this.color;
 
     this.width = this.artWidth * this.dotSize;
     this.height = this.artHeight * this.dotSize;
@@ -53,26 +42,13 @@ export class PixelArtEditor extends PixelCanvas {
     this.boundOnPointerUp = this.onPointerUp.bind(this);
   }
 
-  setColor(color: string) {
-    this.vCanvas.color = this.color = color;
-  }
-
-  draw(x: number, y: number): void {
-    super.draw(x, y);
-    this.vCanvas.draw(x, y);
-  }
-
-  getRelativeCoord(x: number, y: number): Vec2 {
+  private getRelativeCoord(x: number, y: number): Vec2 {
     const rect = this.canvas.getBoundingClientRect();
 
     return {
       x: Math.trunc((x - rect.left) / this.dotSize),
       y: Math.trunc((y - rect.top) / this.dotSize),
     };
-  }
-
-  getCompressedData(): Uint32Array {
-    return this.vCanvas.getCompressedData();
   }
 
   private onPointerDown(e: PointerEvent): void {

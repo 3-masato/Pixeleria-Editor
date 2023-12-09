@@ -80,4 +80,8 @@ export class VirtualCanvas extends PixelCanvas {
 
     return compressed;
   }
+
+  toDataURL(type?: string, quality?: any): string {
+    return this.canvas.toDataURL(type, quality);
+  }
 }
