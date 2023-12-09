@@ -52,6 +52,10 @@ export class PixelCanvas {
     this.ctx.restore();
   }
 
+  erase(x: number, y: number): void {
+    this.ctx.clearRect(x, y, 1, 1);
+  }
+
   clear(): void {
     this.ctx.clearRect(0, 0, this.width, this.height);
   }
