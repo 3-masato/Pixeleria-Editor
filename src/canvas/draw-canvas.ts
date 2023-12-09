@@ -42,7 +42,7 @@ export class DrawCanvas extends PixelCanvas {
     this.boundOnPointerUp = this.onPointerUp.bind(this);
   }
 
-  getRelativeCoord(x: number, y: number): Vec2 {
+  private getRelativeCoord(x: number, y: number): Vec2 {
     const rect = this.canvas.getBoundingClientRect();
 
     return {
