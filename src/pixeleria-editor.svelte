@@ -15,7 +15,7 @@
 
 <script lang="ts">
   import { onMount } from "svelte";
-  import { PixelArtEditor, type PixelArtEventMap } from "./canvas";
+  import { PixelArtEditor, type PixelArtEventMap } from "./editor";
   import { createCustomEventDispatcher } from "./event";
 
   export let component: HTMLElement;
@@ -25,17 +25,22 @@
   export let dotSize: number = 16;
   
   let drawCanvas: HTMLCanvasElement;
+  let previewCanvas: HTMLCanvasElement;
+  
   let editor: PixelArtEditor;
   let pickedColor: string = "#000000";
 
   const dispatch = createCustomEventDispatcher<PixelArtEventMap>(component);
 
   const onSave = () => {
-    dispatch("save", editor.getCompressedData());
+    dispatch("save", {
+      pixelData: editor.getCompressedData(),
+      imageData: editor.getImageDataURI()
+    });
   };
 
   onMount(() => {
-    editor = new PixelArtEditor(drawCanvas, {
+    editor = new PixelArtEditor(drawCanvas, previewCanvas, {
       width: artWidth,
       height: artHeight,
       dotSize
@@ -55,6 +60,9 @@
     />
   </div>
   <div id="tools">
+    <div id="previews">
+      <canvas bind:this={previewCanvas}></canvas>
+    </div>
     <div id="colors">
       <input type="color" bind:value={pickedColor} />
     </div>
@@ -66,6 +74,8 @@
 
 <style>
   :host {
+    display: block;
+    width: 1280px;
   }
   canvas {
     image-rendering: pixelated;
