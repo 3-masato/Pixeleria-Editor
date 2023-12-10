@@ -10,6 +10,32 @@ export type PixelArtEventMap = {
   clear: void;
 };
 
+class Pixel {
+  width: number;
+  height: number;
+  buffer: Uint32Array;
+
+  constructor(width: number, height: number) {
+    this.width = width;
+    this.height = height;
+    this.buffer = new Uint32Array(width * height);
+  }
+
+  set(x: number, y: number, color: number): void {
+    if (!this.contain(x, y)) return;
+    this.buffer[y * this.width + x] = color;
+  }
+
+  get(x: number, y: number): number | undefined {
+    if (!this.contain(x, y)) return undefined;
+    return this.buffer[y * this.width + x];
+  }
+
+  contain(x: number, y: number): boolean {
+    return x >= 0 && y >= 0 && x < this.width && y < this.height;
+  }
+}
+
 export class PixelArtEditor extends DrawCanvas {
   readonly vCanvas: VirtualCanvas;
   readonly pCanvas: PreviewCanvas;
@@ -22,13 +48,14 @@ export class PixelArtEditor extends DrawCanvas {
     super(drawCanvas, option);
 
     this.vCanvas = new VirtualCanvas();
-    this.vCanvas.width = this.artWidth;
-    this.vCanvas.height = this.artHeight;
+    this.vCanvas.size(this.artWidth, this.artHeight);
     this.vCanvas.color = this.color;
 
     this.pCanvas = new PreviewCanvas(previewCanvas);
-    this.pCanvas.width = this.artWidth * (option.dotSize / 2);
-    this.pCanvas.height = this.artHeight * (option.dotSize / 2);
+    this.vCanvas.size(
+      this.artWidth * (option.dotSize / 2),
+      this.artHeight * (option.dotSize / 2)
+    );
     this.pCanvas.color = this.color;
     this.pCanvas.ctx.scale(option.dotSize / 2, option.dotSize / 2);
   }

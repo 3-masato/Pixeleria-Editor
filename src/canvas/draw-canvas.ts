@@ -31,8 +31,7 @@ export class DrawCanvas extends PixelCanvas {
     this.artHeight = option.height;
     this.dotSize = option.dotSize;
 
-    this.width = this.artWidth * this.dotSize;
-    this.height = this.artHeight * this.dotSize;
+    this.size(this.artWidth * this.dotSize, this.artHeight * this.dotSize);
 
     this.ctx.scale(this.dotSize, this.dotSize);
     this.ctx.imageSmoothingEnabled = false;

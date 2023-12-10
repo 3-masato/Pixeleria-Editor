@@ -1,4 +1,4 @@
-export class PixelCanvas {
+export abstract class PixelCanvas {
   readonly canvas: HTMLCanvasElement;
   readonly ctx: CanvasRenderingContext2D;
 
@@ -21,28 +21,17 @@ export class PixelCanvas {
     this.ctx = ctx;
   }
 
-  set width(width: number) {
-    this.canvas.width = width;
-  }
-
-  get width(): number {
-    return this.canvas.width;
-  }
-
-  set height(height: number) {
-    this.canvas.height = height;
-  }
-
-  get height(): number {
-    return this.canvas.height;
-  }
-
   set color(color: string) {
     this._color = color;
   }
 
   get color(): string {
     return this._color;
+  }
+
+  size(width: number, height: number) {
+    this.canvas.width = width;
+    this.canvas.height = height;
   }
 
   draw(x: number, y: number): void {
@@ -57,6 +46,6 @@ export class PixelCanvas {
   }
 
   clear(): void {
-    this.ctx.clearRect(0, 0, this.width, this.height);
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
 }
