@@ -73,6 +73,7 @@ class Pixel {
 export class PixelArtEditor extends DrawCanvas {
   readonly vCanvas: VirtualCanvas;
   readonly pCanvas: PreviewCanvas;
+  readonly pixel: Pixel;
 
   constructor(
     drawCanvas: HTMLCanvasElement,
@@ -86,12 +87,14 @@ export class PixelArtEditor extends DrawCanvas {
     this.vCanvas.color = this.color;
 
     this.pCanvas = new PreviewCanvas(previewCanvas);
-    this.vCanvas.size(
+    this.pCanvas.size(
       this.artWidth * (option.dotSize / 2),
       this.artHeight * (option.dotSize / 2)
     );
     this.pCanvas.color = this.color;
     this.pCanvas.ctx.scale(option.dotSize / 2, option.dotSize / 2);
+
+    this.pixel = new Pixel(this.artWidth, this.artHeight);
   }
 
   setColor(color: string) {
