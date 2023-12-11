@@ -16,7 +16,7 @@
 <script lang="ts">
     
   import { onMount } from "svelte";
-  import { PixelArtEditor, type PixelArtEventMap } from "./editor";
+  import { Editor, type PixelArtEventMap } from "./editor";
   import { createCustomEventDispatcher } from "./event";
 
   export let component: HTMLElement;
@@ -28,7 +28,7 @@
   let drawCanvas: HTMLCanvasElement;
   let previewCanvas: HTMLCanvasElement;
   
-  let editor: PixelArtEditor;
+  let editor: Editor;
   let pickedColor: string = "#000000";
 
   const dispatch = createCustomEventDispatcher<PixelArtEventMap>(component);
@@ -41,12 +41,12 @@
   };
 
   const onClear = () => {
-    editor.clear();
+    editor.clearCanvas();
     dispatch("clear");
   };
 
   onMount(() => {
-    editor = new PixelArtEditor(drawCanvas, previewCanvas, {
+    editor = new Editor(drawCanvas, previewCanvas, {
       width: artWidth,
       height: artHeight,
       dotSize

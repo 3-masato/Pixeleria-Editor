@@ -1,5 +1,6 @@
 import type { PaintMode, Vec2 } from "$types/shared";
-import { PixelCanvas } from "./pixel-canvas";
+import { getCanvasContext } from "../canvas-context";
+import { PixelRenderer } from "../pixel-renderer";
 
 export type DrawCanvasOption = {
   width: number;
@@ -7,12 +8,19 @@ export type DrawCanvasOption = {
   dotSize: number;
 };
 
-export class DrawCanvas extends PixelCanvas {
-  paintMode: PaintMode = "pen";
+export class DrawCanvas {
+  public paintMode: PaintMode = "pen";
 
-  readonly artWidth: number;
-  readonly artHeight: number;
-  readonly dotSize: number;
+  public readonly width: number;
+  public readonly height: number;
+  public readonly dotSize: number;
+
+  public readonly canvas: HTMLCanvasElement;
+  public readonly ctx: CanvasRenderingContext2D;
+
+  public readonly pixelRenderer: PixelRenderer;
+
+  protected colorInt: number = 0;
 
   private pressed = false;
 
@@ -24,35 +32,49 @@ export class DrawCanvas extends PixelCanvas {
   private readonly boundOnPointerMove: (e: PointerEvent) => void;
   private readonly boundOnPointerUp: (e: PointerEvent) => void;
 
-  constructor(canvas: HTMLCanvasElement, option: DrawCanvasOption) {
-    super(canvas);
+  constructor(
+    target: HTMLCanvasElement,
+    previewCanvas: HTMLCanvasElement,
+    option: DrawCanvasOption
+  ) {
+    const { canvas, ctx } = getCanvasContext(target);
+    this.canvas = canvas;
+    this.ctx = ctx;
 
-    this.artWidth = option.width;
-    this.artHeight = option.height;
-    this.dotSize = option.dotSize;
-
-    this.size(this.artWidth * this.dotSize, this.artHeight * this.dotSize);
+    const { width, height, dotSize } = option;
+    this.width = width;
+    this.height = height;
+    this.dotSize = dotSize;
+    this.canvasWidth = width * dotSize;
+    this.canvasHeight = height * dotSize;
 
     this.ctx.scale(this.dotSize, this.dotSize);
     this.ctx.imageSmoothingEnabled = false;
 
+    this.pixelRenderer = new PixelRenderer(width, height);
     this.canvas.addEventListener("pointerdown", (e) => this.onPointerDown(e));
     this.boundOnPointerMove = this.onPointerMove.bind(this);
     this.boundOnPointerUp = this.onPointerUp.bind(this);
   }
 
-  private pointerAction(x: number, y: number): void {
-    switch (this.paintMode) {
-      case "pen": {
-        this.draw(x, y);
-        break;
-      }
+  set canvasWidth(width: number) {
+    this.canvas.width = width;
+  }
 
-      case "erase": {
-        this.erase(x, y);
-        break;
-      }
-    }
+  get canvasWidth(): number {
+    return this.canvas.width;
+  }
+
+  set canvasHeight(height: number) {
+    this.canvas.height = height;
+  }
+
+  get canvasHeight(): number {
+    return this.canvas.height;
+  }
+
+  private setPixel(x: number, y: number): void {
+    this.pixelRenderer.set(x, y, this.colorInt | 0xff000000);
   }
 
   private getRelativeCoord(x: number, y: number): Vec2 {
@@ -101,19 +123,6 @@ export class DrawCanvas extends PixelCanvas {
   }
 
   /**
-   * 座標を計算して canvas 上にドットを描画する処理。
-   */
-  private processDrawing(e: PointerEvent): void {
-    const coords = this.getRelativeCoord(e.clientX, e.clientY);
-    if (this.lastX !== null && this.lastY !== null) {
-      this.drawInterpolatePoints(this.lastX, this.lastY, coords.x, coords.y);
-    }
-    this.pointerAction(coords.x, coords.y);
-    this.lastX = coords.x;
-    this.lastY = coords.y;
-  }
-
-  /**
    * ブレゼンハムの線分描画アルゴリズムを利用して2点間のドットを補間を行い描画する。
    * マウスを素早く動かしたときにドットが飛び飛びになるのを防ぐために使用。
    */
@@ -130,7 +139,7 @@ export class DrawCanvas extends PixelCanvas {
     let err = dx - dy;
 
     while (true) {
-      this.pointerAction(x0, y0);
+      this.setPixel(x0, y0);
 
       if (x0 === x1 && y0 === y1) break;
       const e2 = 2 * err;
@@ -143,5 +152,38 @@ export class DrawCanvas extends PixelCanvas {
         y0 += sy;
       }
     }
+  }
+
+  /**
+   * 座標を計算して canvas 上にドットを描画する処理。
+   */
+  private processDrawing(e: PointerEvent): void {
+    const coords = this.getRelativeCoord(e.clientX, e.clientY);
+    if (this.lastX !== null && this.lastY !== null) {
+      this.drawInterpolatePoints(this.lastX, this.lastY, coords.x, coords.y);
+    }
+    this.setPixel(coords.x, coords.y);
+    this.lastX = coords.x;
+    this.lastY = coords.y;
+
+    this.pixelRenderer.render();
+
+    this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+    this.ctx.save();
+    this.ctx.drawImage(this.pixelRenderer.vCanvas, 0, 0);
+    this.ctx.restore();
+  }
+
+  clearCanvas() {
+    this.pixelRenderer.clear();
+    this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+  }
+
+  getCompressedData(): Uint32Array {
+    return this.pixelRenderer.getCompressedData();
+  }
+
+  getImageDataURI(): string {
+    return this.pixelRenderer.toDataURL("image/png");
   }
 }
