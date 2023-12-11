@@ -71,7 +71,7 @@ export const rgbToHex = (
  * @param {number} [a=1] - The alpha component of the color.
  * @returns {string} The CSS color string in the modern space-separated `rgb()` syntax.
  */
-export const rgb2style = (
+export const rgbToStyle = (
   r: number,
   g: number,
   b: number,

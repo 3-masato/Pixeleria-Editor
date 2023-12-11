@@ -1,3 +1,5 @@
+import { rgbToInt } from "$lib/color";
+import chroma from "chroma-js";
 import { DrawCanvas, type DrawCanvasOption } from "./canvas/draw-canvas";
 import { PreviewCanvas } from "./canvas/preview-canvas";
 import { VirtualCanvas } from "./canvas/virtual-canvas";
@@ -15,13 +17,13 @@ export type PixelArtEventMap = {
  */
 class Pixel {
   /** ピクセルバッファの幅 */
-  width: number;
+  readonly width: number;
 
   /** ピクセルバッファの高さ */
-  height: number;
+  readonly height: number;
 
   /** ピクセルデータを格納するバッファ */
-  buffer: Uint32Array;
+  readonly buffer: Uint32Array;
 
   /**
    * Pixel インスタンスを作成します。
@@ -68,12 +70,18 @@ class Pixel {
   contain(x: number, y: number): boolean {
     return x >= 0 && y >= 0 && x < this.width && y < this.height;
   }
+
+  clear() {
+    this.buffer.fill(0);
+  }
 }
 
 export class PixelArtEditor extends DrawCanvas {
   readonly vCanvas: VirtualCanvas;
   readonly pCanvas: PreviewCanvas;
   readonly pixel: Pixel;
+
+  colorInt: number;
 
   constructor(
     drawCanvas: HTMLCanvasElement,
@@ -95,24 +103,32 @@ export class PixelArtEditor extends DrawCanvas {
     this.pCanvas.ctx.scale(option.dotSize / 2, option.dotSize / 2);
 
     this.pixel = new Pixel(this.artWidth, this.artHeight);
+    this.colorInt = 0;
   }
 
   setColor(color: string) {
-    this.color = color;
-    this.vCanvas.color = color;
-    this.pCanvas.color = color;
+    const chromaColor = chroma(color).alpha(1);
+    const colorString = chromaColor.css();
+    const colorInt = rgbToInt(...chromaColor.rgb());
+
+    this.colorInt = colorInt;
+    this.color = colorString;
+    this.vCanvas.color = colorString;
+    this.pCanvas.color = colorString;
   }
 
   draw(x: number, y: number): void {
     super.draw(x, y);
     this.vCanvas.draw(x, y);
     this.pCanvas.draw(x, y);
+    this.pixel.set(x, y, this.colorInt);
   }
 
   erase(x: number, y: number): void {
     super.erase(x, y);
     this.vCanvas.erase(x, y);
     this.pCanvas.erase(x, y);
+    this.pixel.set(x, y, 0);
   }
 
   clear() {
@@ -123,6 +139,7 @@ export class PixelArtEditor extends DrawCanvas {
     super.clear();
     this.vCanvas.clear();
     this.pCanvas.clear();
+    this.pixel.clear();
   }
 
   getCompressedData(): Uint32Array {
