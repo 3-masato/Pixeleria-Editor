@@ -1,4 +1,4 @@
-import { getCanvasContext } from "src/canvas-context";
+import { getCanvasContext } from "./canvas-context";
 
 export class PixelCanvas {
   public readonly canvas: HTMLCanvasElement;
@@ -6,11 +6,19 @@ export class PixelCanvas {
 
   constructor(
     target: HTMLCanvasElement,
+    width: number,
+    height: number,
+    resolution: number,
     contextOption?: CanvasRenderingContext2DSettings
   ) {
     const { canvas, ctx } = getCanvasContext(target, contextOption);
     this.canvas = canvas;
     this.ctx = ctx;
+
+    this.width = width * resolution;
+    this.height = height * resolution;
+    this.ctx.scale(resolution, resolution);
+    this.ctx.imageSmoothingEnabled = false;
   }
 
   set width(width: number) {
@@ -27,5 +35,16 @@ export class PixelCanvas {
 
   get height(): number {
     return this.canvas.height;
+  }
+
+  draw(image: CanvasImageSource) {
+    this.ctx.clearRect(0, 0, this.width, this.height);
+    this.ctx.save();
+    this.ctx.drawImage(image, 0, 0);
+    this.ctx.restore();
+  }
+
+  clear() {
+    this.ctx.clearRect(0, 0, this.width, this.height);
   }
 }
