@@ -1,6 +1,10 @@
+import type { PaintMode, Vec2 } from "$types/shared";
 import { PixelRenderer } from "./pixel-renderer";
 
 export class InteractiveRenderer {
+  public paintMode: PaintMode = "pen";
+  public colorInt: number = 0;
+
   public readonly pixelRenderer: PixelRenderer;
 
   private pressed = false;
@@ -27,19 +31,37 @@ export class InteractiveRenderer {
     this.boundOnPointerUp = this.onPointerUp.bind(this);
   }
 
+  get rgbaInt() {
+    const alpha = (0xff << 24) >>> 0;
+    const rgbaInt = this.paintMode === "erase" ? 0 : this.colorInt | alpha;
+
+    return rgbaInt;
+  }
+
   private setPixel(x: number, y: number) {
-    this.pixelRenderer.set(x, y);
+    this.pixelRenderer.set(x, y, this.rgbaInt);
   }
 
   private onPointerDown(e: PointerEvent): void {
-    this.pressed = true;
     this.setPointerEventHandlers(e);
-    this.processDrawing(e);
+
+    const { x, y } = this.calcPixelPosition(e);
+    if (this.paintMode === "fill") {
+      this.pixelRenderer.floodFill(x, y, this.rgbaInt);
+    } else {
+      this.pressed = true;
+      this.processDrawing(x, y);
+    }
+
+    this.render();
   }
 
   private onPointerMove(e: PointerEvent): void {
     if (!this.pressed) return;
-    this.processDrawing(e);
+
+    const { x, y } = this.calcPixelPosition(e);
+    this.processDrawing(x, y);
+    this.render();
   }
 
   private onPointerUp(e: PointerEvent): void {
@@ -100,21 +122,33 @@ export class InteractiveRenderer {
   }
 
   /**
-   * 座標を計算して canvas 上にドットを描画する処理。
+   * `PointerEvent` オブジェクトを受け取り、
+   * イベント発生地点の位置からキャンバス上の対応するピクセル座標を取得する。
+   *
+   * @param {PointerEvent} e ユーザーからの `PointerEvent` オブジェクト
+   * @returns {Vec2} キャンバス上のピクセル位置
    */
-  private processDrawing(e: PointerEvent): void {
+  private calcPixelPosition(e: PointerEvent): Vec2 {
     const rect = this.target.getBoundingClientRect();
     const x = Math.trunc((e.clientX - rect.left) / this.dotSize);
     const y = Math.trunc((e.clientY - rect.top) / this.dotSize);
-    console.log(x, y);
 
+    return { x, y };
+  }
+
+  /**
+   * 座標を計算して canvas 上にドットを描画する処理。
+   */
+  private processDrawing(x: number, y: number): void {
     if (this.lastX !== null && this.lastY !== null) {
       this.drawInterpolatePoints(this.lastX, this.lastY, x, y);
     }
     this.setPixel(x, y);
     this.lastX = x;
     this.lastY = y;
+  }
 
+  private render(): void {
     this.pixelRenderer.render();
     this.renderCallback(this.pixelRenderer);
   }

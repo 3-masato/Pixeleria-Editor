@@ -1,12 +1,8 @@
 import { decodeRLE, encodeRLE } from "$lib/rle";
-import type { PaintMode } from "$types/shared";
 import { getCanvasContext } from "./canvas-context";
 import { PixelBuffer } from "./pixel-buffer";
 
 export class PixelRenderer extends PixelBuffer {
-  public paintMode: PaintMode = "pen";
-  public colorInt: number = 0;
-
   public readonly COMPRESSER_VERSION = 1;
 
   private readonly vCanvas: HTMLCanvasElement;
@@ -28,30 +24,47 @@ export class PixelRenderer extends PixelBuffer {
     return this.vCanvas;
   }
 
-  get currentColor(): number {
-    if (this.paintMode === "erase") {
-      return 0;
+  /**
+   * フラッドフィルアルゴリズムを使用して塗りつぶしを実行します。
+   * @param x 開始点の x 座標
+   * @param y 開始点の y 座標
+   * @param fillColor 塗りつぶしに使用する色
+   */
+  floodFill(x: number, y: number, fillColor: number) {
+    if (!this.contain(x, y)) return;
+
+    const targetColor = this.get(x, y)! >>> 0;
+
+    if (targetColor === fillColor) {
+      return;
     }
 
-    const alpha = (0xff << 24) >>> 0;
-    const rgbaInt = this.colorInt | alpha;
-    return rgbaInt;
-  }
+    type PixelStack = Array<[number, number]>;
+    const pixelStack: PixelStack = [[x, y]];
 
-  /**
-   *
-   * @override
-   */
-  set(x: number, y: number) {
-    super.set(x, y, this.currentColor);
-  }
+    while (pixelStack.length > 0) {
+      const [x, y] = pixelStack.pop()!;
+      let westX = x;
+      let eastX = x;
 
-  /**
-   *
-   * @override
-   */
-  get(x: number, y: number): number | undefined {
-    return super.get(x, y);
+      while (westX >= 0 && this.get(westX, y) === targetColor) {
+        westX--;
+      }
+      while (eastX < this.width && this.get(eastX, y) === targetColor) {
+        eastX++;
+      }
+
+      for (let i = westX + 1; i < eastX; i++) {
+        this.set(i, y, fillColor);
+
+        if (y > 0 && this.get(i, y - 1) === targetColor) {
+          pixelStack.push([i, y - 1]);
+        }
+        if (y < this.height - 1 && this.get(i, y + 1) === targetColor) {
+          pixelStack.push([i, y + 1]);
+        }
+      }
+    }
   }
 
   render() {
