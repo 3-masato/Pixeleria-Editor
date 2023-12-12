@@ -3,9 +3,11 @@ import { getCanvasContext } from "./canvas-context";
 import { PixelBuffer } from "./pixel-buffer";
 
 export class PixelRenderer extends PixelBuffer {
-  readonly COMPRESSER_VERSION = 1;
+  public readonly COMPRESSER_VERSION = 1;
 
-  readonly vCanvas: HTMLCanvasElement;
+  public colorInt: number = 0;
+
+  private readonly vCanvas: HTMLCanvasElement;
   private readonly vContext: CanvasRenderingContext2D;
 
   constructor(width: number, height: number) {
@@ -18,6 +20,26 @@ export class PixelRenderer extends PixelBuffer {
     this.vCanvas = canvas;
     this.vContext = ctx;
     this.vContext.imageSmoothingEnabled = false;
+  }
+
+  get image() {
+    return this.vCanvas;
+  }
+
+  /**
+   *
+   * @override
+   */
+  set(x: number, y: number) {
+    super.set(x, y, this.colorInt | 0xff000000);
+  }
+
+  /**
+   *
+   * @override
+   */
+  get(x: number, y: number): number | undefined {
+    return super.get(x, y);
   }
 
   render() {
