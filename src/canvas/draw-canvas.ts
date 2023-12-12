@@ -1,5 +1,7 @@
-import type { PaintMode, Vec2 } from "$types/shared";
+import type { PaintMode } from "$types/shared";
+import { InteractiveRenderer } from "./interactive-renderer";
 import { PixelCanvas } from "./pixel-canvas";
+import { PixelRenderer } from "./pixel-renderer";
 
 export type DrawCanvasOption = {
   width: number;
@@ -7,141 +9,71 @@ export type DrawCanvasOption = {
   dotSize: number;
 };
 
-export class DrawCanvas extends PixelCanvas {
-  paintMode: PaintMode = "pen";
+export class DrawCanvas {
+  public readonly width: number;
+  public readonly height: number;
+  public readonly dotSize: number;
 
-  readonly artWidth: number;
-  readonly artHeight: number;
-  readonly dotSize: number;
+  public readonly dCanvas: PixelCanvas;
+  public readonly pCanvas: PixelCanvas;
 
-  private pressed = false;
+  private interactiveRenderer: InteractiveRenderer;
+  private pixelRenderer: PixelRenderer;
 
-  // 最後に記録されたマウスのX座標とY座標。
-  private lastX: number | null = null;
-  private lastY: number | null = null;
+  constructor(
+    target: HTMLCanvasElement,
+    previewCanvas: HTMLCanvasElement,
+    option: DrawCanvasOption
+  ) {
+    const { width, height, dotSize } = option;
+    this.width = width;
+    this.height = height;
+    this.dotSize = dotSize;
 
-  // イベントリスナーへの参照を保持するために使用する。
-  private readonly boundOnPointerMove: (e: PointerEvent) => void;
-  private readonly boundOnPointerUp: (e: PointerEvent) => void;
+    this.dCanvas = new PixelCanvas(target, width, height, dotSize);
+    this.pCanvas = new PixelCanvas(previewCanvas, width, height, dotSize / 2);
 
-  constructor(canvas: HTMLCanvasElement, option: DrawCanvasOption) {
-    super(canvas);
-
-    this.artWidth = option.width;
-    this.artHeight = option.height;
-    this.dotSize = option.dotSize;
-
-    this.size(this.artWidth * this.dotSize, this.artHeight * this.dotSize);
-
-    this.ctx.scale(this.dotSize, this.dotSize);
-    this.ctx.imageSmoothingEnabled = false;
-
-    this.canvas.addEventListener("pointerdown", (e) => this.onPointerDown(e));
-    this.boundOnPointerMove = this.onPointerMove.bind(this);
-    this.boundOnPointerUp = this.onPointerUp.bind(this);
-  }
-
-  private pointerAction(x: number, y: number): void {
-    switch (this.paintMode) {
-      case "pen": {
-        this.draw(x, y);
-        break;
+    this.interactiveRenderer = new InteractiveRenderer(
+      this.dCanvas.canvas,
+      width,
+      height,
+      dotSize,
+      (renderer) => {
+        this.dCanvas.draw(renderer.image);
+        this.pCanvas.draw(renderer.image);
       }
+    );
 
-      case "erase": {
-        this.erase(x, y);
-        break;
-      }
-    }
+    this.pixelRenderer = this.interactiveRenderer.pixelRenderer;
   }
 
-  private getRelativeCoord(x: number, y: number): Vec2 {
-    const rect = this.canvas.getBoundingClientRect();
-
-    return {
-      x: Math.trunc((x - rect.left) / this.dotSize),
-      y: Math.trunc((y - rect.top) / this.dotSize),
-    };
+  set paintMode(paintMode: PaintMode) {
+    this.pixelRenderer.paintMode = paintMode;
   }
 
-  private onPointerDown(e: PointerEvent): void {
-    this.pressed = true;
-    this.setPointerEventHandlers(e);
-    this.processDrawing(e);
+  get paintMode() {
+    return this.pixelRenderer.paintMode;
   }
 
-  private onPointerMove(e: PointerEvent): void {
-    if (!this.pressed) return;
-    this.processDrawing(e);
+  set colorInt(colorInt: number) {
+    this.pixelRenderer.colorInt = colorInt;
   }
 
-  private onPointerUp(e: PointerEvent): void {
-    this.pressed = false;
-    this.lastX = null;
-    this.lastY = null;
-    this.removePointerEventHandlers(e);
+  get colorInt() {
+    return this.pixelRenderer.colorInt;
   }
 
-  /**
-   * canvas にポインターイベントハンドラを設定する。
-   */
-  private setPointerEventHandlers(e: PointerEvent): void {
-    this.canvas.setPointerCapture(e.pointerId);
-    this.canvas.addEventListener("pointermove", this.boundOnPointerMove);
-    this.canvas.addEventListener("pointerup", this.boundOnPointerUp);
+  clearCanvas() {
+    this.pixelRenderer.clear();
+    this.dCanvas.clear();
+    this.pCanvas.clear();
   }
 
-  /**
-   * canvas に設定したポインターイベントハンドラを削除する。
-   */
-  private removePointerEventHandlers(e: PointerEvent): void {
-    this.canvas.releasePointerCapture(e.pointerId);
-    this.canvas.removeEventListener("pointermove", this.boundOnPointerMove);
-    this.canvas.removeEventListener("pointerup", this.boundOnPointerUp);
+  getCompressedData(): Uint32Array {
+    return this.pixelRenderer.getCompressedData();
   }
 
-  /**
-   * 座標を計算して canvas 上にドットを描画する処理。
-   */
-  private processDrawing(e: PointerEvent): void {
-    const coords = this.getRelativeCoord(e.clientX, e.clientY);
-    if (this.lastX !== null && this.lastY !== null) {
-      this.drawInterpolatePoints(this.lastX, this.lastY, coords.x, coords.y);
-    }
-    this.pointerAction(coords.x, coords.y);
-    this.lastX = coords.x;
-    this.lastY = coords.y;
-  }
-
-  /**
-   * ブレゼンハムの線分描画アルゴリズムを利用して2点間のドットを補間を行い描画する。
-   * マウスを素早く動かしたときにドットが飛び飛びになるのを防ぐために使用。
-   */
-  private drawInterpolatePoints(
-    x0: number,
-    y0: number,
-    x1: number,
-    y1: number
-  ): void {
-    const dx = Math.abs(x1 - x0);
-    const dy = Math.abs(y1 - y0);
-    const sx = x0 < x1 ? 1 : -1;
-    const sy = y0 < y1 ? 1 : -1;
-    let err = dx - dy;
-
-    while (true) {
-      this.pointerAction(x0, y0);
-
-      if (x0 === x1 && y0 === y1) break;
-      const e2 = 2 * err;
-      if (e2 > -dy) {
-        err -= dy;
-        x0 += sx;
-      }
-      if (e2 < dx) {
-        err += dx;
-        y0 += sy;
-      }
-    }
+  getImageDataURI(): string {
+    return this.pixelRenderer.toDataURL("image/png");
   }
 }

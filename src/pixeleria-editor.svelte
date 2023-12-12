@@ -16,7 +16,7 @@
 <script lang="ts">
     
   import { onMount } from "svelte";
-  import { PixelArtEditor, type PixelArtEventMap } from "./editor";
+  import { Editor, type PixelArtEventMap } from "./editor";
   import { createCustomEventDispatcher } from "./event";
 
   export let component: HTMLElement;
@@ -28,7 +28,7 @@
   let drawCanvas: HTMLCanvasElement;
   let previewCanvas: HTMLCanvasElement;
   
-  let editor: PixelArtEditor;
+  let editor: Editor;
   let pickedColor: string = "#000000";
 
   const dispatch = createCustomEventDispatcher<PixelArtEventMap>(component);
@@ -41,12 +41,12 @@
   };
 
   const onClear = () => {
-    editor.clear();
+    editor.clearCanvas();
     dispatch("clear");
   };
 
   onMount(() => {
-    editor = new PixelArtEditor(drawCanvas, previewCanvas, {
+    editor = new Editor(drawCanvas, previewCanvas, {
       width: artWidth,
       height: artHeight,
       dotSize
@@ -69,13 +69,13 @@
     <div id="previews">
       <canvas bind:this={previewCanvas}></canvas>
     </div>
-    <div class="paint-modes">
-      <button id="pencil" on:click={() => {
+    <div id="paint-modes">
+      <button id="pencil" data-select={editor?.paintMode === "pen"} on:click={() => {
         editor.paintMode = "pen"
       }}>Pencil</button> 
-      <button id="eraser" on:click={() => {
+      <button id="eraser" data-select={editor?.paintMode === "erase"} on:click={() => {
         editor.paintMode = "erase"
-      }}>Eraser</button> 
+      }}>Erase</button> 
     </div>
     <div id="colors">
       <input type="color" bind:value={pickedColor} />
@@ -92,9 +92,25 @@
     display: block;
     width: 1280px;
   }
+
   canvas {
     image-rendering: pixelated;
     outline: 1px solid black;
+  }
+  
+  button {
+    padding: 0.5rem;
+    display: grid;
+    place-items: center;
+    position: relative;
+    cursor: pointer;
+    border: 2px solid #020617;
+    border-radius: 0.275rem;
+    margin: 2%;
+  }
+
+  button[data-select="true"] {
+    outline: #0ea5e9 2px solid;
   }
 
   #main-container {
@@ -108,5 +124,15 @@
 
   #tools {
     grid-area: tools;
+  }
+
+  #paint-modes {
+    display: flex;
+    gap: 4px;
+  }
+  
+  #actions {
+    display: flex;
+    gap: 4px;  
   }
 </style>

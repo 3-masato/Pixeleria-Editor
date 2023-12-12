@@ -1,15 +1,66 @@
 import { decodeRLE, encodeRLE } from "$lib/rle";
-import { PixelCanvas } from "./pixel-canvas";
+import type { PaintMode } from "$types/shared";
+import { getCanvasContext } from "./canvas-context";
+import { PixelBuffer } from "./pixel-buffer";
 
-export class VirtualCanvas extends PixelCanvas {
-  readonly COMPRESSER_VERSION = 1;
+export class PixelRenderer extends PixelBuffer {
+  public paintMode: PaintMode = "pen";
+  public colorInt: number = 0;
 
-  constructor() {
-    const canvas = document.createElement("canvas");
-    super(canvas, {
-      // このクラスでは圧縮や解凍などの操作でcanvasのデータを頻繁に読み取るため `willReadFrequently: true` を指定する。
+  public readonly COMPRESSER_VERSION = 1;
+
+  private readonly vCanvas: HTMLCanvasElement;
+  private readonly vContext: CanvasRenderingContext2D;
+
+  constructor(width: number, height: number) {
+    super(width, height);
+
+    const { canvas, ctx } = getCanvasContext(document.createElement("canvas"), {
       willReadFrequently: true,
     });
+
+    this.vCanvas = canvas;
+    this.vContext = ctx;
+    this.vContext.imageSmoothingEnabled = false;
+  }
+
+  get image(): CanvasImageSource {
+    return this.vCanvas;
+  }
+
+  get currentColor(): number {
+    if (this.paintMode === "erase") {
+      return 0;
+    }
+
+    const alpha = (0xff << 24) >>> 0;
+    const rgbaInt = this.colorInt | alpha;
+    return rgbaInt;
+  }
+
+  /**
+   *
+   * @override
+   */
+  set(x: number, y: number) {
+    super.set(x, y, this.currentColor);
+  }
+
+  /**
+   *
+   * @override
+   */
+  get(x: number, y: number): number | undefined {
+    return super.get(x, y);
+  }
+
+  render() {
+    const imageData = this.vContext.createImageData(this.width, this.height);
+    const data = imageData.data;
+    const pixelData = new Uint8ClampedArray(this.pixelData.buffer);
+
+    data.set(pixelData, 0);
+    this.vContext.putImageData(imageData, 0, 0);
   }
 
   /**
@@ -21,8 +72,8 @@ export class VirtualCanvas extends PixelCanvas {
    * @returns {Uint32Array} 圧縮されたcanvasのデータ。
    */
   getCompressedData(): Uint32Array {
-    const { width, height } = this.canvas;
-    const imageData = this.ctx.getImageData(0, 0, width, height);
+    const { width, height } = this.vCanvas;
+    const imageData = this.vContext.getImageData(0, 0, width, height);
     const { data } = imageData;
 
     return this._compress(data.buffer, width, height);
@@ -32,8 +83,8 @@ export class VirtualCanvas extends PixelCanvas {
     const width = compressed.at(-2)!;
     const height = compressed.at(-1)!;
 
-    this.canvas.width = width;
-    this.canvas.height = height;
+    this.vCanvas.width = width;
+    this.vCanvas.height = height;
 
     const compresserVersion = compressed[0];
 
@@ -46,10 +97,10 @@ export class VirtualCanvas extends PixelCanvas {
 
     const decodedArray = decodeRLE(encodedArray);
 
-    const imageData = this.ctx.createImageData(width, height);
+    const imageData = this.vContext.createImageData(width, height);
 
     imageData.data.set(decodedArray, 0);
-    this.ctx.putImageData(imageData, 0, 0);
+    this.vContext.putImageData(imageData, 0, 0);
 
     return { width, height };
   }
@@ -82,6 +133,6 @@ export class VirtualCanvas extends PixelCanvas {
   }
 
   toDataURL(type?: string, quality?: any): string {
-    return this.canvas.toDataURL(type, quality);
+    return this.vCanvas.toDataURL(type, quality);
   }
 }
