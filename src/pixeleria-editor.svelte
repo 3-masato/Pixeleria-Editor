@@ -76,7 +76,10 @@
       <button id="eraser" data-select={editor?.paintMode === "erase"} on:click={() => {
         editor.paintMode = "erase"
       }}>Erase</button> 
-    </div>
+      <button id="fill" data-select={editor?.paintMode === "fill"} on:click={() => {
+        editor.paintMode = "fill"
+      }}>Fill</button> 
+  </div>
     <div id="colors">
       <input type="color" bind:value={pickedColor} />
     </div>

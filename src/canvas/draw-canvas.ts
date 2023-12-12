@@ -48,19 +48,19 @@ export class DrawCanvas {
   }
 
   set paintMode(paintMode: PaintMode) {
-    this.pixelRenderer.paintMode = paintMode;
+    this.interactiveRenderer.paintMode = paintMode;
   }
 
   get paintMode() {
-    return this.pixelRenderer.paintMode;
+    return this.interactiveRenderer.paintMode;
   }
 
   set colorInt(colorInt: number) {
-    this.pixelRenderer.colorInt = colorInt;
+    this.interactiveRenderer.colorInt = colorInt;
   }
 
   get colorInt() {
-    return this.pixelRenderer.colorInt;
+    return this.interactiveRenderer.colorInt;
   }
 
   clearCanvas() {
