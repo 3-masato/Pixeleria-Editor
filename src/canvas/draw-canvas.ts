@@ -64,6 +64,9 @@ export class DrawCanvas {
   }
 
   clearCanvas() {
+    const confirmResult = window.confirm("Clear the canvas?");
+    if (!confirmResult) return;
+
     this.pixelRenderer.clear();
     this.dCanvas.clear();
     this.pCanvas.clear();
