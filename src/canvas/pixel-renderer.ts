@@ -16,12 +16,19 @@ export class PixelRenderer extends PixelBuffer {
     });
 
     this.vCanvas = canvas;
+    this.vCanvas.width = width;
+    this.vCanvas.height = height;
     this.vContext = ctx;
     this.vContext.imageSmoothingEnabled = false;
   }
 
   get image(): CanvasImageSource {
     return this.vCanvas;
+  }
+
+  clear(): void {
+    super.clear();
+    this.vContext.clearRect(0, 0, this.width, this.height);
   }
 
   /**
@@ -67,7 +74,7 @@ export class PixelRenderer extends PixelBuffer {
     }
   }
 
-  render() {
+  render(): void {
     const imageData = this.vContext.createImageData(this.width, this.height);
     const data = imageData.data;
     const pixelData = new Uint8ClampedArray(this.pixelData.buffer);

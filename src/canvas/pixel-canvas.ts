@@ -37,14 +37,14 @@ export class PixelCanvas {
     return this.canvas.height;
   }
 
-  draw(image: CanvasImageSource) {
+  draw(image: CanvasImageSource): void {
     this.ctx.clearRect(0, 0, this.width, this.height);
     this.ctx.save();
     this.ctx.drawImage(image, 0, 0);
     this.ctx.restore();
   }
 
-  clear() {
+  clear(): void {
     this.ctx.clearRect(0, 0, this.width, this.height);
   }
 }
