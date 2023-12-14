@@ -1,34 +1,31 @@
 import { decodeRLE, encodeRLE } from "$lib/rle";
-import { getCanvasContext } from "./canvas-context";
 import { PixelBuffer } from "./pixel-buffer";
+import { PixelCanvas } from "./pixel-canvas";
 
 export class PixelRenderer extends PixelBuffer {
   public readonly COMPRESSER_VERSION = 1;
 
-  private readonly vCanvas: HTMLCanvasElement;
-  private readonly vContext: CanvasRenderingContext2D;
+  private readonly vCanvas: PixelCanvas;
 
   constructor(width: number, height: number) {
     super(width, height);
 
-    const { canvas, ctx } = getCanvasContext(document.createElement("canvas"), {
-      willReadFrequently: true,
-    });
-
-    this.vCanvas = canvas;
-    this.vCanvas.width = width;
-    this.vCanvas.height = height;
-    this.vContext = ctx;
-    this.vContext.imageSmoothingEnabled = false;
+    this.vCanvas = new PixelCanvas(
+      document.createElement("canvas"),
+      width,
+      height,
+      1,
+      { willReadFrequently: true }
+    );
   }
 
   get image(): CanvasImageSource {
-    return this.vCanvas;
+    return this.vCanvas.canvas;
   }
 
   clear(): void {
     super.clear();
-    this.vContext.clearRect(0, 0, this.width, this.height);
+    this.vCanvas.clear();
   }
 
   /**
@@ -75,12 +72,13 @@ export class PixelRenderer extends PixelBuffer {
   }
 
   render(): void {
-    const imageData = this.vContext.createImageData(this.width, this.height);
+    const ctx = this.vCanvas.ctx;
+    const imageData = ctx.createImageData(this.width, this.height);
     const data = imageData.data;
     const pixelData = new Uint8ClampedArray(this.pixelData.buffer);
 
     data.set(pixelData, 0);
-    this.vContext.putImageData(imageData, 0, 0);
+    ctx.putImageData(imageData, 0, 0);
   }
 
   /**
@@ -92,8 +90,8 @@ export class PixelRenderer extends PixelBuffer {
    * @returns {Uint32Array} 圧縮されたcanvasのデータ。
    */
   getCompressedData(): Uint32Array {
-    const { width, height } = this.vCanvas;
-    const imageData = this.vContext.getImageData(0, 0, width, height);
+    const { width, height, ctx } = this.vCanvas;
+    const imageData = ctx.getImageData(0, 0, width, height);
     const { data } = imageData;
 
     return this._compress(data.buffer, width, height);
@@ -117,10 +115,11 @@ export class PixelRenderer extends PixelBuffer {
 
     const decodedArray = decodeRLE(encodedArray);
 
-    const imageData = this.vContext.createImageData(width, height);
+    const ctx = this.vCanvas.ctx;
+    const imageData = ctx.createImageData(width, height);
 
     imageData.data.set(decodedArray, 0);
-    this.vContext.putImageData(imageData, 0, 0);
+    ctx.putImageData(imageData, 0, 0);
 
     return { width, height };
   }
@@ -153,6 +152,7 @@ export class PixelRenderer extends PixelBuffer {
   }
 
   toDataURL(type?: string, quality?: any): string {
-    return this.vCanvas.toDataURL(type, quality);
+    const canvas = this.vCanvas.canvas;
+    return canvas.toDataURL(type, quality);
   }
 }
