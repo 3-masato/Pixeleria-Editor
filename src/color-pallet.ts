@@ -16,9 +16,14 @@ export class ColorPallet {
 
   push(color: string) {
     const rgbHex = this._getColorString(color);
+    const isExist = this._pallet.includes(rgbHex);
+
+    if (!isExist) {
+      this._pallet.push(rgbHex);
+      return;
+    }
 
     this._color = rgbHex;
-    this._pallet.push(rgbHex);
   }
 
   remove(color: string) {
