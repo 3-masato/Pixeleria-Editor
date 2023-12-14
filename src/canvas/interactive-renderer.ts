@@ -38,7 +38,7 @@ export class InteractiveRenderer {
     return rgbaInt;
   }
 
-  private setPixel(x: number, y: number) {
+  private setPixel(x: number, y: number): void {
     this.pixelRenderer.set(x, y, this.rgbaInt);
   }
 
