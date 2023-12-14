@@ -16,9 +16,15 @@
 <script lang="ts">
   import type { PaintMode } from "$types/shared";
   import { onMount } from "svelte";
-  import { EraserSolid, FillDripSolid, FloppyDiskRegular, PenSolid, PencilSolid, TrashCanRegular } from 'svelte-awesome-icons';
+// import { EraserSolid, FillDripSolid, FloppyDiskRegular, PenSolid, PencilSolid, TrashCanRegular } from 'svelte-awesome-icons';
   import { Editor, type PixelArtEventMap } from "./editor";
   import { createCustomEventDispatcher } from "./event";
+  import Eraser from "./icon/eraser.svg.svelte";
+  import FillDrip from "./icon/fill-drip.svg.svelte";
+  import FloppyDisk from "./icon/floppy-disk.svg.svelte";
+  import Pen from "./icon/pen.svg.svelte";
+  import Pencil from "./icon/pencil.svg.svelte";
+  import TrashCan from "./icon/trash-can.svg.svelte";
 
   export let component: HTMLElement;
 
@@ -67,17 +73,17 @@
     {
       id: "pencil",
       mode: "pen",
-      icon: PenSolid
+      icon: Pen,
     },
     {
       id: "eraser",
       mode: "erase",
-      icon: EraserSolid,
+      icon: Eraser,
     },
     {
       id: "fill",
       mode: "fill",
-      icon: FillDripSolid,
+      icon: FillDrip,
     },
   ];
 </script>
@@ -100,18 +106,18 @@
           id={tool.id}
           data-select={editor?.paintMode === tool.mode}
           on:click={() => { editor.paintMode = tool.mode; }
-        }><svelte:component this={tool.icon} /></button>
+        }><svelte:component this={tool.icon} width="24" height="24" /></button>
       {/each}
     </div>
     <div id="colors">
       <label class="button color-pick-button" style="--pickedColor: {pickedColor};">
-        <PencilSolid stroke="white" stroke-width="20" />
+        <Pencil width="24" height="24" stroke="white" stroke-width="20" />
         <input class="input-color" type="color" bind:value={pickedColor} />
       </label>
     </div>
     <div id="actions">
-      <button class="button" id="save" on:click={onSave}><FloppyDiskRegular /></button>
-      <button class="button" id="clear" on:click={onClear}><TrashCanRegular /></button>
+      <button class="button" id="save" on:click={onSave}><FloppyDisk width="24" height="24" /></button>
+      <button class="button" id="clear" on:click={onClear}><TrashCan width="24" height="24" /></button>
     </div>
   </div>
 </div>
