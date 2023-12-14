@@ -16,7 +16,7 @@
 <script lang="ts">
   import type { PaintMode } from "$types/shared";
   import { onMount } from "svelte";
-// import { EraserSolid, FillDripSolid, FloppyDiskRegular, PenSolid, PencilSolid, TrashCanRegular } from 'svelte-awesome-icons';
+  import { ColorPallet } from "./color-pallet";
   import { Editor, type PixelArtEventMap } from "./editor";
   import { createCustomEventDispatcher } from "./event";
   import Eraser from "./icon/eraser.svg.svelte";
@@ -24,6 +24,7 @@
   import FloppyDisk from "./icon/floppy-disk.svg.svelte";
   import Pen from "./icon/pen.svg.svelte";
   import Pencil from "./icon/pencil.svg.svelte";
+  import Plus from "./icon/plus.svg.svelte";
   import TrashCan from "./icon/trash-can.svg.svelte";
 
   export let component: HTMLElement;
@@ -35,6 +36,8 @@
   let drawCanvas: HTMLCanvasElement;
   let previewCanvas: HTMLCanvasElement;
   
+  const colorPallet = new ColorPallet();
+  let currentPallet = colorPallet.toArray();
   let editor: Editor;
   let pickedColor: string = "#000000";
 
@@ -110,10 +113,22 @@
       {/each}
     </div>
     <div id="colors">
-      <label class="button color-pick-button" style="--pickedColor: {pickedColor};">
-        <Pencil width="24" height="24" stroke="white" stroke-width="20" />
-        <input class="input-color" type="color" bind:value={pickedColor} />
+      <label class="button color-pick-button">
+        <Plus width="24" height="24" />
+        <input class="input-color" type="color" bind:value={pickedColor} on:change={() => {
+          colorPallet.push(pickedColor);
+          currentPallet = colorPallet.toArray().reverse();
+        }} />
       </label>
+      {#each currentPallet as color}
+        <button class="button color-pallet-button" style="--palletColor: {color}" data-select={pickedColor === color} on:click={() => {
+          pickedColor = color;
+        }}>
+          <span class="icon-wrapper">
+            <Pencil width="24" height="24" stroke="white" stroke-width="20" />
+          </span>
+        </button>
+      {/each}
     </div>
     <div id="actions">
       <button class="button" id="save" on:click={onSave}><FloppyDisk width="24" height="24" /></button>
@@ -145,13 +160,13 @@
   }
   
   .button {
-    padding: 0.5rem;
+    padding: 0.625rem;
     display: grid;
     place-items: center;
     position: relative;
     cursor: pointer;
     border: 2px solid #020617;
-    border-radius: 0.275rem;
+    border-radius: 4px;
     margin: 2px;
 
     &[data-select="true"] {
@@ -159,8 +174,18 @@
     }
   }
 
-  .color-pick-button {
-    background-color: var(--pickedColor);
+  .color-pallet-button {
+    background-color: var(--palletColor);
+
+    &[data-select="ture"] {
+      outline: #0ea5e9 2px solid;
+    }
+
+    &[data-select="false"] {
+      span {
+        opacity: 0;
+      }
+    }
   }
 
   #main-container {
@@ -169,8 +194,10 @@
   }
 
   #tools {
+    max-width: 256px;
+
     & > * + * {
-      margin-top: 8px;
+      margin-top: 0.75rem;
     }
   }
 
@@ -182,6 +209,7 @@
   #colors {
     display: flex;
     gap: 4px;
+    flex-flow: wrap row;
   }
   
   #actions {
