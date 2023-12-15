@@ -14,14 +14,19 @@ export class DrawCanvas {
   public readonly height: number;
   public readonly dotSize: number;
 
-  public readonly dCanvas: PixelCanvas;
-  public readonly pCanvas: PixelCanvas;
+  public readonly targetCanvas: PixelCanvas;
+  public readonly previewCanvas: PixelCanvas;
+
+  public readonly drawCanvas: PixelCanvas;
+  public readonly hoverCanvas: PixelCanvas;
+  public readonly backgroundCanvas: PixelCanvas;
+  public readonly gridCanvas: PixelCanvas;
 
   private interactiveRenderer: InteractiveRenderer;
   private pixelRenderer: PixelRenderer;
 
   constructor(
-    target: HTMLCanvasElement,
+    targetCanvas: HTMLCanvasElement,
     previewCanvas: HTMLCanvasElement,
     option: DrawCanvasOption
   ) {
@@ -30,17 +35,41 @@ export class DrawCanvas {
     this.height = height;
     this.dotSize = dotSize;
 
-    this.dCanvas = new PixelCanvas(target, width, height, dotSize);
-    this.pCanvas = new PixelCanvas(previewCanvas, width, height, dotSize / 2);
+    this.backgroundCanvas = new PixelCanvas(
+      document.createElement("canvas"),
+      width,
+      height,
+      1
+    );
+    this.gridCanvas = new PixelCanvas(
+      document.createElement("canvas"),
+      width,
+      height,
+      1
+    );
+    this.drawCanvas = new PixelCanvas(
+      document.createElement("canvas"),
+      width,
+      height,
+      1
+    );
+    this.hoverCanvas = new PixelCanvas(
+      document.createElement("canvas"),
+      width,
+      height,
+      1
+    );
+
+    this.targetCanvas = new PixelCanvas(targetCanvas, width, height, dotSize);
+    this.previewCanvas = new PixelCanvas(previewCanvas, width, height, dotSize / 2);
 
     this.interactiveRenderer = new InteractiveRenderer(
-      this.dCanvas.canvas,
+      this.targetCanvas.canvas,
       width,
       height,
       dotSize,
       (renderer) => {
-        this.dCanvas.draw(renderer.image);
-        this.pCanvas.draw(renderer.image);
+        this.previewCanvas.draw(renderer.image);
       }
     );
 
@@ -67,9 +96,9 @@ export class DrawCanvas {
     const confirmResult = window.confirm("Clear the canvas?");
     if (!confirmResult) return;
 
-    this.pixelRenderer.clear();
-    this.dCanvas.clear();
-    this.pCanvas.clear();
+    this.interactiveRenderer.clear();
+    this.targetCanvas.clear();
+    this.previewCanvas.clear();
   }
 
   getCompressedData(): Uint32Array {

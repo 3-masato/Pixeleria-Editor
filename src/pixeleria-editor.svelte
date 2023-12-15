@@ -37,6 +37,7 @@
     imageData: editor.getImageDataURI()
   });
   
+  let hoverCanvas: HTMLCanvasElement;
   let drawCanvas: HTMLCanvasElement;
   let previewCanvas: HTMLCanvasElement;
   
