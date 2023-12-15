@@ -21,7 +21,6 @@
   import { createCustomEventDispatcher } from "./event";
   import Eraser from "./icon/eraser.svg.svelte";
   import FillDrip from "./icon/fill-drip.svg.svelte";
-  import FloppyDisk from "./icon/floppy-disk.svg.svelte";
   import Pen from "./icon/pen.svg.svelte";
   import Pencil from "./icon/pencil.svg.svelte";
   import Plus from "./icon/plus.svg.svelte";
@@ -32,6 +31,11 @@
   export let artWidth: number = 64;
   export let artHeight: number = 64;
   export let dotSize: number = 16;
+
+  export const getDetails = () => ({
+    pixelData: editor.getCompressedData(),
+    imageData: editor.getImageDataURI()
+  });
   
   let drawCanvas: HTMLCanvasElement;
   let previewCanvas: HTMLCanvasElement;
@@ -42,13 +46,6 @@
   let pickedColor: string = "#000000";
 
   const dispatch = createCustomEventDispatcher<PixelArtEventMap>(component);
-
-  const onSave = () => {
-    dispatch("save", {
-      pixelData: editor.getCompressedData(),
-      imageData: editor.getImageDataURI()
-    });
-  };
 
   const onClear = () => {
     editor.clearCanvas();
@@ -111,6 +108,7 @@
           on:click={() => { editor.paintMode = tool.mode; }
         }><svelte:component this={tool.icon} width="24" height="24" /></button>
       {/each}
+      <button class="button" id="clear" on:click={onClear}><TrashCan width="24" height="24" /></button>
     </div>
     <div id="colors">
       <label class="button color-pick-button">
@@ -129,10 +127,6 @@
           </span>
         </button>
       {/each}
-    </div>
-    <div id="actions">
-      <button class="button" id="save" on:click={onSave}><FloppyDisk width="24" height="24" /></button>
-      <button class="button" id="clear" on:click={onClear}><TrashCan width="24" height="24" /></button>
     </div>
   </div>
 </div>
@@ -168,9 +162,13 @@
     border: 2px solid #020617;
     border-radius: 4px;
     margin: 2px;
+    outline-style: solid;
+    outline-width: 2px;
+    outline-color: transparent;
+    transition: all 100ms ease-out;
 
     &[data-select="true"] {
-      outline: #0ea5e9 2px solid;
+      outline-color: #0ea5e9;
     }
   }
 
@@ -212,8 +210,14 @@
     flex-flow: wrap row;
   }
   
-  #actions {
-    display: flex;
-    gap: 4px;  
+  #clear {
+    fill: #7f1d1d;
+    background-color: #fecaca;
+    border-color: #7f1d1d;
+
+    &:hover {
+      fill: #fecaca;
+      background-color: #ef4444;
+    }
   }
 </style>
