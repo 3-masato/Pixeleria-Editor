@@ -32,12 +32,14 @@ export class PixelRenderer extends PixelBuffer {
    * フラッドフィルアルゴリズムを使用して塗りつぶしを実行します。
    * @param x 開始点の x 座標
    * @param y 開始点の y 座標
-   * @param fillColor 塗りつぶしに使用する色
+   * @param color 塗りつぶしに使用する色
    */
-  floodFill(x: number, y: number, fillColor: number) {
+  floodFill(x: number, y: number, color: number) {
     if (!this.contain(x, y)) return;
 
-    const targetColor = this.get(x, y)! >>> 0;
+    // 符号なし32bit整数に変換してから比較する
+    const targetColor = this.get(x, y);
+    const fillColor = color >>> 0;
 
     if (targetColor === fillColor) {
       return;
