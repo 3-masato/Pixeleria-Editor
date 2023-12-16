@@ -78,6 +78,11 @@ export class InteractiveRenderer {
     return rgbaInt;
   }
 
+  public setPixelData(pixelData: Uint32Array) {
+    this.pixelRenderer.decompressData(pixelData);
+    this.render();
+  }
+
   public clear() {
     this.pixelRenderer.clear();
     this.backgroundCanvas.clear();

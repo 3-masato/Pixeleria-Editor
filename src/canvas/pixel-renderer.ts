@@ -117,11 +117,8 @@ export class PixelRenderer extends PixelBuffer {
 
     const decodedArray = decodeRLE(encodedArray);
 
-    const ctx = this.vCanvas.ctx;
-    const imageData = ctx.createImageData(width, height);
-
-    imageData.data.set(decodedArray, 0);
-    ctx.putImageData(imageData, 0, 0);
+    this.pixelData.set(decodedArray, 0);
+    this.render();
 
     return { width, height };
   }

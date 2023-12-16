@@ -1,4 +1,4 @@
-import type { PaintMode } from "$types/shared";
+import type { NumericArray, PaintMode } from "$types/shared";
 import { InteractiveRenderer } from "./interactive-renderer";
 import { PixelCanvas } from "./pixel-canvas";
 import { PixelRenderer } from "./pixel-renderer";
@@ -17,11 +17,6 @@ export class DrawCanvas {
   public readonly targetCanvas: PixelCanvas;
   public readonly previewCanvas: PixelCanvas;
 
-  public readonly drawCanvas: PixelCanvas;
-  public readonly hoverCanvas: PixelCanvas;
-  public readonly backgroundCanvas: PixelCanvas;
-  public readonly gridCanvas: PixelCanvas;
-
   private interactiveRenderer: InteractiveRenderer;
   private pixelRenderer: PixelRenderer;
 
@@ -34,31 +29,6 @@ export class DrawCanvas {
     this.width = width;
     this.height = height;
     this.dotSize = dotSize;
-
-    this.backgroundCanvas = new PixelCanvas(
-      document.createElement("canvas"),
-      width,
-      height,
-      1
-    );
-    this.gridCanvas = new PixelCanvas(
-      document.createElement("canvas"),
-      width,
-      height,
-      1
-    );
-    this.drawCanvas = new PixelCanvas(
-      document.createElement("canvas"),
-      width,
-      height,
-      1
-    );
-    this.hoverCanvas = new PixelCanvas(
-      document.createElement("canvas"),
-      width,
-      height,
-      1
-    );
 
     this.targetCanvas = new PixelCanvas(targetCanvas, width, height, dotSize);
     this.previewCanvas = new PixelCanvas(previewCanvas, width, height, dotSize / 2);
@@ -107,5 +77,10 @@ export class DrawCanvas {
 
   getImageDataURI(): string {
     return this.pixelRenderer.toDataURL("image/png");
+  }
+
+  load(pixelDataLike: NumericArray): void {
+    const pixelData = Uint32Array.from(pixelDataLike);
+    this.interactiveRenderer.setPixelData(pixelData);
   }
 }
