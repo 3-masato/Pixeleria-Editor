@@ -6,35 +6,23 @@ export class PixelCanvas {
 
   constructor(
     target: HTMLCanvasElement,
-    width: number,
-    height: number,
-    resolution: number,
+    readonly width: number,
+    readonly height: number,
+    readonly resolution: number = 1,
     contextOption?: CanvasRenderingContext2DSettings
   ) {
     const { canvas, ctx } = getCanvasContext(target, contextOption);
     this.canvas = canvas;
     this.ctx = ctx;
 
-    this.width = width * resolution;
-    this.height = height * resolution;
-    this.ctx.scale(resolution, resolution);
+    this.resize(width, height, resolution);
     this.ctx.imageSmoothingEnabled = false;
   }
 
-  set width(width: number) {
-    this.canvas.width = width;
-  }
-
-  get width(): number {
-    return this.canvas.width;
-  }
-
-  set height(height: number) {
-    this.canvas.height = height;
-  }
-
-  get height(): number {
-    return this.canvas.height;
+  resize(width: number, height: number, resolution: number) {
+    this.canvas.width = width * resolution;
+    this.canvas.height = height * resolution;
+    this.ctx.scale(resolution, resolution);
   }
 
   draw(image: CanvasImageSource): void {

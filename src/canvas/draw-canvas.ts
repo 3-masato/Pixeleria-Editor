@@ -1,7 +1,7 @@
-import type { NumericArray, PaintMode } from "$types/shared";
+import type { PaintMode } from "$types/shared";
 import { InteractiveRenderer } from "./interactive-renderer";
 import { PixelCanvas } from "./pixel-canvas";
-import { PixelRenderer } from "./pixel-renderer";
+import type { PixelRenderer } from "./pixel-renderer";
 
 export type DrawCanvasOption = {
   width: number;
@@ -12,13 +12,12 @@ export type DrawCanvasOption = {
 export class DrawCanvas {
   public readonly width: number;
   public readonly height: number;
-  public readonly dotSize: number;
 
   public readonly targetCanvas: PixelCanvas;
   public readonly previewCanvas: PixelCanvas;
 
-  private interactiveRenderer: InteractiveRenderer;
-  private pixelRenderer: PixelRenderer;
+  private readonly interactiveRenderer: InteractiveRenderer;
+  private readonly pixelRenderer: PixelRenderer;
 
   constructor(
     targetCanvas: HTMLCanvasElement,
@@ -28,21 +27,16 @@ export class DrawCanvas {
     const { width, height, dotSize } = option;
     this.width = width;
     this.height = height;
-    this.dotSize = dotSize;
 
     this.targetCanvas = new PixelCanvas(targetCanvas, width, height, dotSize);
     this.previewCanvas = new PixelCanvas(previewCanvas, width, height, dotSize / 2);
 
     this.interactiveRenderer = new InteractiveRenderer(
-      this.targetCanvas.canvas,
-      width,
-      height,
-      dotSize,
+      this.targetCanvas,
       (renderer) => {
         this.previewCanvas.draw(renderer.image);
       }
     );
-
     this.pixelRenderer = this.interactiveRenderer.pixelRenderer;
   }
 
@@ -71,16 +65,17 @@ export class DrawCanvas {
     this.previewCanvas.clear();
   }
 
-  getCompressedData(): Uint32Array {
-    return this.pixelRenderer.getCompressedData();
-  }
-
   getImageDataURI(): string {
     return this.pixelRenderer.toDataURL("image/png");
   }
 
-  load(pixelDataLike: NumericArray): void {
-    const pixelData = Uint32Array.from(pixelDataLike);
-    this.interactiveRenderer.setPixelData(pixelData);
+  loadPixelData(data: Uint32Array): boolean {
+    const requiredLength = this.width * this.height * 4;
+    if (data.buffer.byteLength !== requiredLength) {
+      return false;
+    }
+
+    this.pixelRenderer.pixelData.set(data, 0);
+    return true;
   }
 }

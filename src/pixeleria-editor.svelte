@@ -13,9 +13,11 @@
   }
 }} />
 
+
 <script lang="ts">
   import type { NumericArray, PaintMode } from "$types/shared";
   import { onMount } from "svelte";
+  import { PixelConverter } from "./canvas/pixel-converer";
   import { ColorPallet } from "./color-pallet";
   import { Editor, type PixelArtEventMap } from "./editor";
   import { createCustomEventDispatcher } from "./event";
@@ -33,14 +35,26 @@
   export let dotSize: number = 16;
 
   export const getDetails = () => ({
-    pixelData: editor.getCompressedData(),
+    pixelData: PixelConverter.compress(editor.targetCanvas.ctx, editor.width, editor.height),
     imageData: editor.getImageDataURI()
   });
   export const loadPixelData = (pixelDataLike: NumericArray) => {
-    editor.load(pixelDataLike);
+    if (!tryLoadData(pixelDataLike)) {
+      alert("Invalid data.");
+    }
+  };
+
+  const tryLoadData = (pixelDataLike: NumericArray) => {
+    const pixelData = Uint32Array.from(pixelDataLike);
+    const { data, width, height } = PixelConverter.decompress(pixelData);
+
+    if (width !== Number(artWidth) || height !== Number(artHeight)) {
+      return false;
+    }
+
+    return editor.loadPixelData(data);
   };
   
-  let hoverCanvas: HTMLCanvasElement;
   let drawCanvas: HTMLCanvasElement;
   let previewCanvas: HTMLCanvasElement;
   
@@ -58,8 +72,8 @@
 
   onMount(() => {
     editor = new Editor(drawCanvas, previewCanvas, {
-      width: artWidth,
-      height: artHeight,
+      width: Number(artWidth),
+      height: Number(artHeight),
       dotSize
     });
   });
