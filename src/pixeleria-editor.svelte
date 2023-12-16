@@ -14,7 +14,7 @@
 }} />
 
 <script lang="ts">
-  import type { PaintMode } from "$types/shared";
+  import type { NumericArray, PaintMode } from "$types/shared";
   import { onMount } from "svelte";
   import { ColorPallet } from "./color-pallet";
   import { Editor, type PixelArtEventMap } from "./editor";
@@ -36,7 +36,11 @@
     pixelData: editor.getCompressedData(),
     imageData: editor.getImageDataURI()
   });
+  export const loadPixelData = (pixelDataLike: NumericArray) => {
+    editor.load(pixelDataLike);
+  };
   
+  let hoverCanvas: HTMLCanvasElement;
   let drawCanvas: HTMLCanvasElement;
   let previewCanvas: HTMLCanvasElement;
   

@@ -1,4 +1,4 @@
-import type { PaintMode } from "$types/shared";
+import type { NumericArray, PaintMode } from "$types/shared";
 import { InteractiveRenderer } from "./interactive-renderer";
 import { PixelCanvas } from "./pixel-canvas";
 import { PixelRenderer } from "./pixel-renderer";
@@ -14,14 +14,14 @@ export class DrawCanvas {
   public readonly height: number;
   public readonly dotSize: number;
 
-  public readonly dCanvas: PixelCanvas;
-  public readonly pCanvas: PixelCanvas;
+  public readonly targetCanvas: PixelCanvas;
+  public readonly previewCanvas: PixelCanvas;
 
   private interactiveRenderer: InteractiveRenderer;
   private pixelRenderer: PixelRenderer;
 
   constructor(
-    target: HTMLCanvasElement,
+    targetCanvas: HTMLCanvasElement,
     previewCanvas: HTMLCanvasElement,
     option: DrawCanvasOption
   ) {
@@ -30,17 +30,16 @@ export class DrawCanvas {
     this.height = height;
     this.dotSize = dotSize;
 
-    this.dCanvas = new PixelCanvas(target, width, height, dotSize);
-    this.pCanvas = new PixelCanvas(previewCanvas, width, height, dotSize / 2);
+    this.targetCanvas = new PixelCanvas(targetCanvas, width, height, dotSize);
+    this.previewCanvas = new PixelCanvas(previewCanvas, width, height, dotSize / 2);
 
     this.interactiveRenderer = new InteractiveRenderer(
-      this.dCanvas.canvas,
+      this.targetCanvas.canvas,
       width,
       height,
       dotSize,
       (renderer) => {
-        this.dCanvas.draw(renderer.image);
-        this.pCanvas.draw(renderer.image);
+        this.previewCanvas.draw(renderer.image);
       }
     );
 
@@ -67,9 +66,9 @@ export class DrawCanvas {
     const confirmResult = window.confirm("Clear the canvas?");
     if (!confirmResult) return;
 
-    this.pixelRenderer.clear();
-    this.dCanvas.clear();
-    this.pCanvas.clear();
+    this.interactiveRenderer.clear();
+    this.targetCanvas.clear();
+    this.previewCanvas.clear();
   }
 
   getCompressedData(): Uint32Array {
@@ -78,5 +77,10 @@ export class DrawCanvas {
 
   getImageDataURI(): string {
     return this.pixelRenderer.toDataURL("image/png");
+  }
+
+  load(pixelDataLike: NumericArray): void {
+    const pixelData = Uint32Array.from(pixelDataLike);
+    this.interactiveRenderer.setPixelData(pixelData);
   }
 }
