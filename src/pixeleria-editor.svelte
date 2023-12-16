@@ -34,10 +34,13 @@
   export let artHeight: number = 64;
   export let dotSize: number = 16;
 
-  export const getDetails = () => ({
-    pixelData: PixelConverter.compress(editor.targetCanvas.ctx, editor.width, editor.height),
-    imageData: editor.getImageDataURI()
-  });
+  export const getDetails = () => {
+    const { pixelData, width, height } = editor.getPixelData();
+    return {
+      pixelData: PixelConverter.compress(pixelData, width, height),
+      imageData: editor.getImageDataURI()
+    }
+  };
   export const loadPixelData = (pixelDataLike: NumericArray) => {
     if (!tryLoadData(pixelDataLike)) {
       alert("Invalid data.");
