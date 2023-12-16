@@ -1,5 +1,4 @@
 import type { PaintMode, Vec2 } from "$types/shared";
-import { getCanvasContext } from "./canvas-context";
 import { HoverCanvas } from "./hover-canvas";
 import { PixelCanvas } from "./pixel-canvas";
 import { PixelRenderer } from "./pixel-renderer";
@@ -9,9 +8,6 @@ export class InteractiveRenderer {
   public colorInt: number = 0;
 
   public readonly pixelRenderer: PixelRenderer;
-
-  public readonly targetCanvas: HTMLCanvasElement;
-  public readonly targetContext: CanvasRenderingContext2D;
 
   public readonly backgroundCanvas: PixelCanvas;
   public readonly gridCanvas: PixelCanvas;
@@ -28,22 +24,17 @@ export class InteractiveRenderer {
   private readonly boundOnPointerUp: (e: PointerEvent) => void;
 
   constructor(
-    target: HTMLCanvasElement,
-    public readonly width: number,
-    public readonly height: number,
-    public readonly dotSize: number,
-    public readonly renderCallback: (renderer: PixelRenderer) => void
+    public readonly target: PixelCanvas,
+    private readonly renderCallback: (renderer: PixelRenderer) => void
   ) {
-    const { canvas, ctx } = getCanvasContext(target);
-    this.targetCanvas = canvas;
-    this.targetContext = ctx;
+    const { width, height, canvas } = this.target;
 
-    this.pixelRenderer = new PixelRenderer(width, height);
-
-    this.targetCanvas.addEventListener("pointerdown", (e) => this.onPointerDown(e));
-    this.targetCanvas.addEventListener("pointermove", (e) => this.onPointerMove(e));
+    canvas.addEventListener("pointerdown", (e) => this.onPointerDown(e));
+    canvas.addEventListener("pointermove", (e) => this.onPointerMove(e));
 
     this.boundOnPointerUp = this.onPointerUp.bind(this);
+
+    this.pixelRenderer = new PixelRenderer(width, height);
 
     this.backgroundCanvas = new PixelCanvas(
       document.createElement("canvas"),
@@ -76,11 +67,6 @@ export class InteractiveRenderer {
     const rgbaInt = this.paintMode === "erase" ? 0 : this.colorInt | alpha;
 
     return rgbaInt;
-  }
-
-  public setPixelData(pixelData: Uint32Array) {
-    this.pixelRenderer.decompressData(pixelData);
-    this.render();
   }
 
   public clear() {
@@ -131,16 +117,16 @@ export class InteractiveRenderer {
    * canvas にポインターイベントハンドラを設定する。
    */
   private setPointerEventHandlers(e: PointerEvent): void {
-    this.targetCanvas.setPointerCapture(e.pointerId);
-    this.targetCanvas.addEventListener("pointerup", this.boundOnPointerUp);
+    this.target.canvas.setPointerCapture(e.pointerId);
+    this.target.canvas.addEventListener("pointerup", this.boundOnPointerUp);
   }
 
   /**
    * canvas に設定したポインターイベントハンドラを削除する。
    */
   private removePointerEventHandlers(e: PointerEvent): void {
-    this.targetCanvas.releasePointerCapture(e.pointerId);
-    this.targetCanvas.removeEventListener("pointerup", this.boundOnPointerUp);
+    this.target.canvas.releasePointerCapture(e.pointerId);
+    this.target.canvas.removeEventListener("pointerup", this.boundOnPointerUp);
   }
 
   /**
@@ -183,9 +169,10 @@ export class InteractiveRenderer {
    * @returns {Vec2} キャンバス上のピクセル位置
    */
   private calcPixelPosition(e: PointerEvent): Vec2 {
-    const rect = this.targetCanvas.getBoundingClientRect();
-    const x = Math.trunc((e.clientX - rect.left) / this.dotSize);
-    const y = Math.trunc((e.clientY - rect.top) / this.dotSize);
+    const rect = this.target.canvas.getBoundingClientRect();
+    const resolution = this.target.resolution;
+    const x = Math.trunc((e.clientX - rect.left) / resolution);
+    const y = Math.trunc((e.clientY - rect.top) / resolution);
 
     return { x, y };
   }
@@ -204,15 +191,17 @@ export class InteractiveRenderer {
 
   private render(): void {
     this.pixelRenderer.render();
+
     const image = this.pixelRenderer.image;
+    const { width, height, ctx } = this.target;
 
     this.drawCanvas.draw(image);
 
-    this.targetContext.clearRect(0, 0, this.width, this.height);
-    this.targetContext.drawImage(this.backgroundCanvas.canvas, 0, 0);
-    this.targetContext.drawImage(this.gridCanvas.canvas, 0, 0);
-    this.targetContext.drawImage(this.drawCanvas.canvas, 0, 0);
-    this.targetContext.drawImage(this.hoverCanvas.canvas, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(this.backgroundCanvas.canvas, 0, 0);
+    ctx.drawImage(this.gridCanvas.canvas, 0, 0);
+    ctx.drawImage(this.drawCanvas.canvas, 0, 0);
+    ctx.drawImage(this.hoverCanvas.canvas, 0, 0);
 
     this.renderCallback(this.pixelRenderer);
   }
