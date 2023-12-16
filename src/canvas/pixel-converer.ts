@@ -14,20 +14,17 @@ export class PixelConverter {
    * 圧縮されたデータには、圧縮アルゴリズムのバージョン、圧縮後のデータ長、
    * canvasの幅と高さの情報も含まれる。
    *
-   * @param {CanvasRenderingContext2D} context - 圧縮するcanvasのコンテキスト。
+   * @param {Uint32Array} pixelData - 圧縮するcanvasのピクセルデータ。
    * @param {number} width - canvasの幅。
    * @param {number} height - canvasの高さ。
    * @returns {Uint32Array} 圧縮されたcanvasのデータ。
    */
   public static compress(
-    context: CanvasRenderingContext2D,
+    pixelData: Uint32Array,
     width: number,
     height: number
   ): Uint32Array {
-    const imageData = context.getImageData(0, 0, width, height);
-    const { data } = imageData;
-
-    return this._compress(data, width, height);
+    return this._compress(pixelData, width, height);
   }
 
   /**
@@ -46,17 +43,17 @@ export class PixelConverter {
    * RLE方式で圧縮し、圧縮されたデータの先頭には圧縮アルゴリズムのバージョンとデータ長を追加する。
    * 末尾にはcanvasの幅と高さを追加する。
    *
-   * @param {ArrayBuffer} buffer - 圧縮する画像データの `ArrayBuffer`。
+   * @param {Uint32Array} pixelData - 圧縮する画像データのピクセルデータ`。
    * @param {number} width - canvasの幅。
    * @param {number} height - canvasの高さ。
    * @returns {Uint32Array} 圧縮されたデータ。
    */
   private static _compress(
-    buffer: ArrayBuffer,
+    pixelData: Uint32Array,
     width: number,
     height: number
   ): Uint32Array {
-    const encodedArray = encodeRLE(new Uint32Array(buffer));
+    const encodedArray = encodeRLE(pixelData);
     const encodedArrayLength = encodedArray.length;
 
     const compressed = new Uint32Array(encodedArrayLength + 4);
@@ -74,7 +71,7 @@ export class PixelConverter {
    * RLE方式で解凍する。解凍されたデータには、canvasのピクセルデータが含まれる。
    *
    * @param {Uint32Array} compressed - 圧縮されたデータ。
-   * @returns {Object} 解凍されたデータ、canvasの幅、高さを含むオブジェクト。
+   * @returns {DecompressedData} 解凍されたデータ、canvasの幅、高さを含むオブジェクト。
    */
   private static _decompress(compressed: Uint32Array): DecompressedData {
     const width = compressed.at(-2)!;

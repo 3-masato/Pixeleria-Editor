@@ -78,4 +78,16 @@ export class DrawCanvas {
     this.pixelRenderer.pixelData.set(data, 0);
     return true;
   }
+
+  getPixelData(): {
+    pixelData: Uint32Array;
+    width: number;
+    height: number;
+  } {
+    return {
+      pixelData: this.pixelRenderer.pixelData,
+      width: this.width,
+      height: this.height,
+    };
+  }
 }
