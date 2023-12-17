@@ -1,4 +1,4 @@
-import { getCanvasContext } from "./canvas-context";
+import { getCanvasContext } from "../util/canvas-context";
 
 export class PixelCanvas {
   public readonly canvas: HTMLCanvasElement;
@@ -8,21 +8,20 @@ export class PixelCanvas {
     target: HTMLCanvasElement,
     readonly width: number,
     readonly height: number,
-    readonly resolution: number = 1,
+    readonly dotSize: number = 1,
     contextOption?: CanvasRenderingContext2DSettings
   ) {
     const { canvas, ctx } = getCanvasContext(target, contextOption);
     this.canvas = canvas;
     this.ctx = ctx;
 
-    this.resize(width, height, resolution);
-    this.ctx.imageSmoothingEnabled = false;
+    this.resize(width, height, dotSize);
   }
 
-  resize(width: number, height: number, resolution: number) {
-    this.canvas.width = width * resolution;
-    this.canvas.height = height * resolution;
-    this.ctx.scale(resolution, resolution);
+  resize(width: number, height: number, dotSize: number) {
+    this.canvas.width = width * dotSize;
+    this.canvas.height = height * dotSize;
+    this.ctx.scale(dotSize, dotSize);
   }
 
   draw(image: CanvasImageSource): void {
