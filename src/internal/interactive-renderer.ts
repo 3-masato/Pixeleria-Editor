@@ -1,18 +1,32 @@
 import type { PaintMode, Vec2 } from "$types/shared";
-import { HoverCanvas } from "./hover-canvas";
-import { PixelCanvas } from "./pixel-canvas";
+import { EventDispatcher } from "../util/event";
 import { PixelRenderer } from "./pixel-renderer";
 
-export class InteractiveRenderer {
+type EventMap = {
+  pointerdown: {
+    x: number;
+    y: number;
+    rgbaInt: number;
+  };
+  pointermove: {
+    x: number;
+    y: number;
+    rgbaInt: number;
+  };
+  pointerup: {
+    x: number;
+    y: number;
+    rgbaInt: number;
+  };
+  render: void;
+  clear: void;
+};
+
+export class InteractiveRenderer extends EventDispatcher<EventMap> {
   public paintMode: PaintMode = "pen";
   public colorInt: number = 0;
 
   public readonly pixelRenderer: PixelRenderer;
-
-  public readonly backgroundCanvas: PixelCanvas;
-  public readonly gridCanvas: PixelCanvas;
-  public readonly drawCanvas: PixelCanvas;
-  public readonly hoverCanvas: HoverCanvas;
 
   private pressed = false;
 
@@ -24,42 +38,19 @@ export class InteractiveRenderer {
   private readonly boundOnPointerUp: (e: PointerEvent) => void;
 
   constructor(
-    public readonly target: PixelCanvas,
-    private readonly renderCallback: (renderer: PixelRenderer) => void
+    public readonly target: HTMLElement,
+    public readonly width: number,
+    public readonly height: number,
+    public readonly dotSize: number
   ) {
-    const { width, height, canvas } = this.target;
+    super();
 
-    canvas.addEventListener("pointerdown", (e) => this.onPointerDown(e));
-    canvas.addEventListener("pointermove", (e) => this.onPointerMove(e));
+    target.addEventListener("pointerdown", (e) => this.onPointerDown(e));
+    target.addEventListener("pointermove", (e) => this.onPointerMove(e));
 
     this.boundOnPointerUp = this.onPointerUp.bind(this);
 
     this.pixelRenderer = new PixelRenderer(width, height);
-
-    this.backgroundCanvas = new PixelCanvas(
-      document.createElement("canvas"),
-      width,
-      height,
-      1
-    );
-    this.gridCanvas = new PixelCanvas(
-      document.createElement("canvas"),
-      width,
-      height,
-      1
-    );
-    this.drawCanvas = new PixelCanvas(
-      document.createElement("canvas"),
-      width,
-      height,
-      1
-    );
-    this.hoverCanvas = new HoverCanvas(
-      document.createElement("canvas"),
-      width,
-      height,
-      1
-    );
   }
 
   get rgbaInt() {
@@ -71,10 +62,7 @@ export class InteractiveRenderer {
 
   public clear() {
     this.pixelRenderer.clear();
-    this.backgroundCanvas.clear();
-    this.gridCanvas.clear();
-    this.drawCanvas.clear();
-    this.hoverCanvas.clear();
+    this.fire("clear");
   }
 
   private setPixel(x: number, y: number): void {
@@ -85,6 +73,8 @@ export class InteractiveRenderer {
     this.setPointerEventHandlers(e);
 
     const { x, y } = this.calcPixelPosition(e);
+    this.fire("pointerdown", { x, y, rgbaInt: this.rgbaInt });
+
     if (this.paintMode === "fill") {
       this.pixelRenderer.floodFill(x, y, this.rgbaInt);
     } else {
@@ -97,7 +87,7 @@ export class InteractiveRenderer {
 
   private onPointerMove(e: PointerEvent): void {
     const { x, y } = this.calcPixelPosition(e);
-    this.hoverCanvas.drawPixel(x, y, this.rgbaInt);
+    this.fire("pointermove", { x, y, rgbaInt: this.rgbaInt });
 
     if (this.pressed) {
       this.processDrawing(x, y);
@@ -117,16 +107,16 @@ export class InteractiveRenderer {
    * canvas にポインターイベントハンドラを設定する。
    */
   private setPointerEventHandlers(e: PointerEvent): void {
-    this.target.canvas.setPointerCapture(e.pointerId);
-    this.target.canvas.addEventListener("pointerup", this.boundOnPointerUp);
+    this.target.setPointerCapture(e.pointerId);
+    this.target.addEventListener("pointerup", this.boundOnPointerUp);
   }
 
   /**
    * canvas に設定したポインターイベントハンドラを削除する。
    */
   private removePointerEventHandlers(e: PointerEvent): void {
-    this.target.canvas.releasePointerCapture(e.pointerId);
-    this.target.canvas.removeEventListener("pointerup", this.boundOnPointerUp);
+    this.target.releasePointerCapture(e.pointerId);
+    this.target.removeEventListener("pointerup", this.boundOnPointerUp);
   }
 
   /**
@@ -169,10 +159,10 @@ export class InteractiveRenderer {
    * @returns {Vec2} キャンバス上のピクセル位置
    */
   private calcPixelPosition(e: PointerEvent): Vec2 {
-    const rect = this.target.canvas.getBoundingClientRect();
-    const resolution = this.target.resolution;
-    const x = Math.trunc((e.clientX - rect.left) / resolution);
-    const y = Math.trunc((e.clientY - rect.top) / resolution);
+    const rect = this.target.getBoundingClientRect();
+    const dotSize = this.dotSize;
+    const x = Math.trunc((e.clientX - rect.left) / dotSize);
+    const y = Math.trunc((e.clientY - rect.top) / dotSize);
 
     return { x, y };
   }
@@ -191,18 +181,6 @@ export class InteractiveRenderer {
 
   private render(): void {
     this.pixelRenderer.render();
-
-    const image = this.pixelRenderer.image;
-    const { width, height, ctx } = this.target;
-
-    this.drawCanvas.draw(image);
-
-    ctx.clearRect(0, 0, width, height);
-    ctx.drawImage(this.backgroundCanvas.canvas, 0, 0);
-    ctx.drawImage(this.gridCanvas.canvas, 0, 0);
-    ctx.drawImage(this.drawCanvas.canvas, 0, 0);
-    ctx.drawImage(this.hoverCanvas.canvas, 0, 0);
-
-    this.renderCallback(this.pixelRenderer);
+    this.fire("render");
   }
 }

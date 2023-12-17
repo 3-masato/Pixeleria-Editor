@@ -1,11 +1,23 @@
 import { PixelCanvas } from "./pixel-canvas";
 
 export class GridCanvas extends PixelCanvas {
+  private _visibility = true;
+
+  get visibility() {
+    return this._visibility;
+  }
+
+  toggleVisibility() {
+    this._visibility = !this._visibility;
+    this.canvas.style.setProperty("display", this._visibility ? null : "none");
+    return this._visibility;
+  }
+
   drawGrid(dotSize: number) {
     const { width, height, ctx } = this;
 
     ctx.lineWidth = 0.5;
-    ctx.strokeStyle = "#0ea5e9";
+    ctx.strokeStyle = "rgb(127 127 127)";
 
     ctx.beginPath();
 

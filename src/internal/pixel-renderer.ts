@@ -1,5 +1,5 @@
+import { PixelCanvas } from "../canvas/pixel-canvas";
 import { PixelBuffer } from "./pixel-buffer";
-import { PixelCanvas } from "./pixel-canvas";
 
 export class PixelRenderer extends PixelBuffer {
   private readonly vCanvas: PixelCanvas;
