@@ -22,6 +22,7 @@
   import BorderNone from "./icon/border-none.svg.svelte";
   import Eraser from "./icon/eraser.svg.svelte";
   import FillDrip from "./icon/fill-drip.svg.svelte";
+  import Minus from "./icon/minus.svg.svelte";
   import Pen from "./icon/pen.svg.svelte";
   import Pencil from "./icon/pencil.svg.svelte";
   import Plus from "./icon/plus.svg.svelte";
@@ -50,17 +51,6 @@
     }
   };
 
-  const tryLoadData = (pixelDataLike: NumericArray) => {
-    const pixelData = Uint32Array.from(pixelDataLike);
-    const { data, width, height } = PixelConverter.decompress(pixelData);
-
-    if (width !== Number(artWidth) || height !== Number(artHeight)) {
-      return false;
-    }
-
-    return editor.loadPixelData(data);
-  };
-
   let canvasArea: HTMLElement;
   let backgroundCanvas: HTMLCanvasElement;
   let drawCanvas: HTMLCanvasElement;
@@ -74,8 +64,23 @@
   const colorPallet = new ColorPallet();
   let currentPallet = colorPallet.toArray();
   let editor: Editor;
-  let pickedColor: string = "#000000";
   let colorValue: string = "#000000";
+  let pickedColor: string = colorValue;
+
+  const tryLoadData = (pixelDataLike: NumericArray) => {
+    const pixelData = Uint32Array.from(pixelDataLike);
+    const { data, width, height } = PixelConverter.decompress(pixelData);
+
+    if (width !== Number(artWidth) || height !== Number(artHeight)) {
+      return false;
+    }
+
+    return editor.loadPixelData(data);
+  };
+
+  const updatePallet = () => {
+    currentPallet = colorPallet.toArray().reverse();
+  };
 
   const dispatch = createCustomEventDispatcher<PixelArtEventMap>(component);
 
@@ -83,30 +88,6 @@
     editor.clearCanvas();
     dispatch("clear");
   };
-
-  onMount(() => {
-    editor = new Editor({
-      canvasArea,
-      backgroundCanvas,
-      drawCanvas,
-      hoverCanvas,
-      gridCanvas,
-      previewCanvas,
-      width: Number(artWidth),
-      height: Number(artHeight),
-      dotSize
-    });
-    clientWidth = editor.clientWidth;
-    clientHeight = editor.clientHeight;
-    visibleGrid = editor.visibleGrid;
-  });
-
-  $: if (editor) {
-    const chromaColor = chroma(pickedColor);
-    const rgb = chromaColor.rgb();
-    const colorInt = rgbToInt(rgb[2], rgb[1], rgb[0]);
-    editor.colorInt = colorInt;
-  }
 
   type PaintTools = Array<{
     id: string;
@@ -130,6 +111,31 @@
       icon: FillDrip,
     },
   ];
+
+  onMount(() => {
+    editor = new Editor({
+      canvasArea,
+      backgroundCanvas,
+      drawCanvas,
+      hoverCanvas,
+      gridCanvas,
+      previewCanvas,
+      width: Number(artWidth),
+      height: Number(artHeight),
+      dotSize
+    });
+    clientWidth = editor.clientWidth;
+    clientHeight = editor.clientHeight;
+    visibleGrid = editor.visibleGrid;
+    updatePallet();
+  });
+
+  $: if (editor) {
+    const chromaColor = chroma(pickedColor);
+    const rgb = chromaColor.rgb();
+    const colorInt = rgbToInt(rgb[2], rgb[1], rgb[0]);
+    editor.colorInt = colorInt;
+  }
 </script>
 
 <div id="main-container" style="--width: {clientWidth}px; --height: {clientHeight}px;">
@@ -150,7 +156,9 @@
           id={tool.id}
           data-select={editor?.paintMode === tool.mode}
           on:click={() => { editor.paintMode = tool.mode; }
-        }><svelte:component this={tool.icon} width="24" height="24" /></button>
+        }>
+          <svelte:component this={tool.icon} width="24" height="24" />
+        </button>
       {/each}
     </div>
     <div class="row" id="colors">
@@ -159,17 +167,27 @@
         <input class="input-color" type="color" bind:value={colorValue} on:change={() => {
           pickedColor = colorValue;
           colorPallet.push(pickedColor);
-          currentPallet = colorPallet.toArray().reverse();
+          updatePallet();
         }} />
       </label>
       {#each currentPallet as color}
-        <button class="button color-pallet-button" style="--palletColor: {color}" data-select={pickedColor === color} on:click={() => {
-          pickedColor = color;
-        }}>
-          <span class="icon-wrapper">
-            <Pencil width="24" height="24" stroke="white" stroke-width="20" />
-          </span>
-        </button>
+        <div class="color-pallet-wrapper">
+           <button class="button color-pallet-button" style="--palletColor: {color}" data-select={pickedColor === color} on:click={() => {
+              pickedColor = color;
+            }}>
+            <span class="icon-wrapper">
+              <Pencil width="24" height="24" stroke="white" stroke-width="20" />
+            </span>
+          </button>
+          {#if currentPallet.length > 1}
+            <button class="remove-color-button" on:click={() => {
+              colorPallet.remove(color);
+              updatePallet();
+            }}>
+              <Minus width="8" height="8"/>
+            </button>
+          {/if}
+        </div>
       {/each}
     </div>
     <div class="row" id="actions">
@@ -190,6 +208,12 @@
     display: block;
     max-width: 1920px;
     width: 100%;
+  }
+
+  *, ::before, ::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
   }
 
   canvas {
@@ -237,6 +261,14 @@
     }  
   }
 
+  .color-pallet-wrapper {
+    position: relative;
+
+    &:hover .remove-color-button {
+      opacity: 1;
+    }
+  }
+
   .color-pallet-button {
     background-color: var(--palletColor);
     
@@ -252,6 +284,34 @@
     }
   }
 
+  .remove-color-button {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border-radius: 50%;
+    border: 0;
+    cursor: pointer;
+    box-shadow: 0 8px 12px -3px rgb(0 0 0 / 0.2), 0 4px 6px -4px rgb(0 0 0 / 0.2);
+    background-color: #f1f5f9;
+    outline-color: #0ea5e9;
+    fill: #020617;
+    opacity: 0;
+
+    &:hover {
+      filter: brightness(1.02);
+    }
+
+    &:active {
+      filter: brightness(0.92);
+    }
+  }
+
   .grid-button {
     &[data-select="true"] {
       background-color: #020617;
@@ -262,7 +322,7 @@
   .row {
     display: flex;
     flex-flow: wrap row;
-    gap: 0.5rem;
+    gap: 1rem;
   }
 
   #main-container {
