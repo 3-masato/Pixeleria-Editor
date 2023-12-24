@@ -151,8 +151,8 @@
     <Canvas id="hover-canvas" bind:ref={hoverCanvas} class="absolute" />
     <Canvas id="grid-canvas" bind:ref={gridCanvas} class="absolute" />
   </div>
-  <div class="max-w-xs space-y-4">
-    <div class="flex flex-wrap gap-4" id="previews">
+  <div class="w-64 space-y-4">
+    <div class="flex flex-wrap justify-center gap-4" id="previews">
       <Canvas id="preview-canvas" bind:ref={previewCanvas} />
     </div>
     <div class="flex flex-wrap gap-4" id="paint-modes">
