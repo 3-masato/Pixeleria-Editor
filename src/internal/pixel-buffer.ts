@@ -12,7 +12,7 @@ export class PixelBuffer {
   readonly pixelData: Uint32Array;
 
   /**
-   * Pixel インスタンスを作成します。
+   * PixelBuffer インスタンスを作成します。
    *
    * @param {number} width - ピクセルバッファの幅
    * @param {number} height - ピクセルバッファの高さ
@@ -59,7 +59,7 @@ export class PixelBuffer {
   }
 
   /**
-   * ピクセルバッファの全てのピクセルをクリア（リセット）します。
+   * ピクセルバッファの全てのピクセルをクリア(リセット)します。
    *
    * @returns {void}
    */

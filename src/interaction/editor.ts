@@ -92,16 +92,19 @@ export class Editor {
 
     this.gridCanvas.drawGrid(dotSize);
     this.backgroundCanvas.drawBackground();
-    this.interactiveRenderer.on("pointermove", ({ x, y, rgbaInt }) => {
-      this.hoverCanvas.drawPixel(x, y, rgbaInt);
-    });
-    this.interactiveRenderer.on("render", () => {
-      this.drawCanvas.draw(this.interactiveRenderer.pixelRenderer.image);
-      this.previewCanvas.draw(this.interactiveRenderer.pixelRenderer.image);
-    });
-    this.interactiveRenderer.on("clear", () => {
-      this.drawCanvas.clear();
-    });
+
+    this.interactiveRenderer
+      .on("pointermove", ({ x, y, rgbaInt }) => {
+        this.hoverCanvas.drawPixel(x, y, rgbaInt);
+      })
+      .on("render", () => {
+        const imageSource = this.interactiveRenderer.pixelRenderer.image;
+        this.drawCanvas.draw(imageSource);
+        this.previewCanvas.draw(imageSource);
+      })
+      .on("clear", () => {
+        this.drawCanvas.clear();
+      });
   }
 
   set paintMode(paintMode: PaintMode) {
@@ -141,7 +144,7 @@ export class Editor {
       return false;
     }
 
-    this.pixelRenderer.pixelData.set(data, 0);
+    this.interactiveRenderer.setPixelData(data);
     return true;
   }
 
