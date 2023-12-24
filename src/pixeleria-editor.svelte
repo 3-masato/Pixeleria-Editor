@@ -199,6 +199,7 @@
               on:click={() => {
                 colorPallet.remove(color);
                 updatePallet();
+                pickedColor = colorPallet.currentColor;
               }}
             >
               <Minus width="8" height="8" />
