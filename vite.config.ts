@@ -7,24 +7,24 @@ export default defineConfig({
   build: {
     lib: {
       entry: ["./src/pixeleria-editor.svelte"],
-      formats: ["es"],
-    },
+      formats: ["es"]
+    }
   },
   plugins: [
     svelte({
       compilerOptions: {
-        customElement: true,
-      },
-    }),
+        customElement: true
+      }
+    })
   ],
   server: {
     // Ports available in the AWS Cloud9 environment are 8080, 8081, or 8082.
-    port: 8081,
+    port: 8081
   },
   resolve: {
     alias: {
       $lib: path.resolve(".", "src/lib"),
-      $types: path.resolve(".", "src/@types"),
-    },
-  },
+      $types: path.resolve(".", "src/@types")
+    }
+  }
 });

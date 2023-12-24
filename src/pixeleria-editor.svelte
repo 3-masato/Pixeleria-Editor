@@ -1,24 +1,30 @@
-<!-- Get the current component without using the non-public `get_current_component` function. -->
-<!-- See: https://github.com/sveltejs/svelte/issues/9189#issuecomment-1794764745 -->
-<svelte:options customElement={{
-  tag: "pixeleria-editor",
-  // @ts-ignore
-  extend: (customElementConstructor) => {
-    return class extends customElementConstructor {
-      constructor() {
-        super();
-        this.component = this;
-      }
-    };
-  }
-}} />
-
+<!-- 
+  Get the current component without using the non-public `get_current_component` function.
+  See: https://github.com/sveltejs/svelte/issues/9189#issuecomment-1794764745
+-->
+<svelte:options
+  customElement={{
+    tag: "pixeleria-editor",
+    // @ts-ignore
+    extend: (customElementConstructor) => {
+      return class extends customElementConstructor {
+        constructor() {
+          super();
+          this.component = this;
+        }
+      };
+    }
+  }}
+/>
 
 <script lang="ts">
-  import { rgbToInt } from "$lib/color";
   import type { NumericArray, PaintMode } from "$types/shared";
+
+  import { rgbToInt } from "$lib/color";
   import chroma from "chroma-js";
   import { onMount } from "svelte";
+  import Button from "./component/button.svelte";
+  import Canvas from "./component/canvas.svelte";
   import BorderNone from "./icon/border-none.svg.svelte";
   import Eraser from "./icon/eraser.svg.svelte";
   import FillDrip from "./icon/fill-drip.svg.svelte";
@@ -43,7 +49,7 @@
     return {
       pixelData: PixelConverter.compress(pixelData, width, height),
       imageData: editor.getImageDataURI()
-    }
+    };
   };
   export const loadPixelData = (pixelDataLike: NumericArray) => {
     if (!tryLoadData(pixelDataLike)) {
@@ -60,7 +66,7 @@
   let clientWidth: number;
   let clientHeight: number;
   let visibleGrid: boolean;
-  
+
   const colorPallet = new ColorPallet();
   let currentPallet = colorPallet.toArray();
   let editor: Editor;
@@ -93,23 +99,23 @@
     id: string;
     mode: PaintMode;
     icon: any;
-  }>
+  }>;
   const paintTools: PaintTools = [
     {
       id: "pencil",
       mode: "pen",
-      icon: Pen,
+      icon: Pen
     },
     {
       id: "eraser",
       mode: "erase",
-      icon: Eraser,
+      icon: Eraser
     },
     {
       id: "fill",
       mode: "fill",
-      icon: FillDrip,
-    },
+      icon: FillDrip
+    }
   ];
 
   onMount(() => {
@@ -138,224 +144,102 @@
   }
 </script>
 
-<div id="main-container" style="--width: {clientWidth}px; --height: {clientHeight}px;">
-  <div id="canvas-area" bind:this={canvasArea}>
-    <canvas id="background-canvas" bind:this={backgroundCanvas}></canvas>
-    <canvas id="draw-canvas" bind:this={drawCanvas}></canvas>
-    <canvas id="hover-canvas" bind:this={hoverCanvas}></canvas>
-    <canvas id="grid-canvas" bind:this={gridCanvas}></canvas>
+<div class="flex justify-evenly" style="--width: {clientWidth}px; --height: {clientHeight}px;">
+  <div class="relative h-[var(--height)] w-[var(--width)]" id="canvas-area" bind:this={canvasArea}>
+    <Canvas id="background-canvas" bind:ref={backgroundCanvas} class="absolute" />
+    <Canvas id="draw-canvas" bind:ref={drawCanvas} class="absolute" />
+    <Canvas id="hover-canvas" bind:ref={hoverCanvas} class="absolute" />
+    <Canvas id="grid-canvas" bind:ref={gridCanvas} class="absolute" />
   </div>
-  <div id="tools">
-    <div class="row" id="previews">
-      <canvas id="preview-canvas" bind:this={previewCanvas}></canvas>
+  <div class="max-w-xs space-y-4">
+    <div class="flex flex-wrap gap-4" id="previews">
+      <Canvas id="preview-canvas" bind:ref={previewCanvas} />
     </div>
-    <div class="row" id="paint-modes">
+    <div class="flex flex-wrap gap-4" id="paint-modes">
       {#each paintTools as tool}
-        <button
-          class="button icon-button"
-          id={tool.id}
-          data-select={editor?.paintMode === tool.mode}
-          on:click={() => { editor.paintMode = tool.mode; }
-        }>
+        <Button
+          on:click={() => {
+            editor.paintMode = tool.mode;
+          }}
+          class={editor?.paintMode === tool.mode
+            ? "bg-slate-50 fill-slate-950 outline-sky-500"
+            : ""}
+        >
           <svelte:component this={tool.icon} width="24" height="24" />
-        </button>
+        </Button>
       {/each}
     </div>
-    <div class="row" id="colors">
-      <label class="button color-pick-button">
+    <div class="flex flex-wrap gap-4" id="colors">
+      <Button tag="label">
         <Plus width="24" height="24" />
-        <input class="input-color" type="color" bind:value={colorValue} on:change={() => {
-          pickedColor = colorValue;
-          colorPallet.push(pickedColor);
-          updatePallet();
-        }} />
-      </label>
+        <input
+          class="visually-hidden"
+          type="color"
+          bind:value={colorValue}
+          on:change={() => {
+            pickedColor = colorValue;
+            colorPallet.push(pickedColor);
+            updatePallet();
+          }}
+        />
+      </Button>
       {#each currentPallet as color}
-        <div class="color-pallet-wrapper">
-           <button class="button color-pallet-button" style="--palletColor: {color}" data-select={pickedColor === color} on:click={() => {
+        <div class="group relative" style="--palletColor: {color}">
+          <Button
+            class={`bg-[var(--palletColor)] ${pickedColor === color ? "outline-sky-500" : ""}`}
+            on:click={() => {
               pickedColor = color;
-            }}>
-            <span class="icon-wrapper">
-              <Pencil width="24" height="24" stroke="white" stroke-width="20" />
-            </span>
-          </button>
+            }}
+          >
+            <Pencil width="24" height="24" stroke="white" stroke-width="20" />
+          </Button>
           {#if currentPallet.length > 1}
-            <button class="remove-color-button" on:click={() => {
-              colorPallet.remove(color);
-              updatePallet();
-            }}>
-              <Minus width="8" height="8"/>
+            <button
+              class="absolute left-0 top-0 grid h-5 w-5 -translate-x-1/2 -translate-y-1/2 cursor-pointer place-items-center rounded-full border-0 bg-slate-100 fill-slate-950 p-0 opacity-0 shadow-lg transition-all duration-75 ease-out hover:bg-slate-50 active:bg-slate-300 group-hover:opacity-100"
+              on:click={() => {
+                colorPallet.remove(color);
+                updatePallet();
+              }}
+            >
+              <Minus width="8" height="8" />
             </button>
           {/if}
         </div>
       {/each}
     </div>
-    <div class="row" id="actions">
-      <button class="button grid-button" data-select={visibleGrid} on:click={() => {
-        visibleGrid = editor.toggleVisibleGrid();
-      }}><BorderNone width="24" height="24" /></button>
-      <button class="button clear-button" id="clear" on:click={onClear}><TrashCan width="24" height="24" /></button>
+    <div class="flex flex-wrap gap-4" id="actions">
+      <Button
+        class={visibleGrid ? "bg-slate-900 fill-slate-50" : ""}
+        on:click={() => {
+          visibleGrid = editor.toggleVisibleGrid();
+        }}
+      >
+        <BorderNone width="24" height="24" />
+      </Button>
+      <Button
+        class="border border-red-900 bg-red-100 fill-red-800 hover:bg-red-800 hover:fill-red-100"
+        on:click={onClear}
+      >
+        <TrashCan width="24" height="24" />
+      </Button>
     </div>
   </div>
 </div>
 
-<style lang="scss">
+<!-- svelte-ignore css-unused-selector -->
+<style lang="postcss">
+  @import "./app.postcss";
+
   :global(svg:focus) {
-    outline: none;
+    @apply outline-none;
   }
 
   :host {
-    display: block;
-    max-width: 1920px;
-    width: 100%;
+    @apply block w-full max-w-[1920px];
   }
 
-  *, ::before, ::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-
-  canvas {
-    image-rendering: pixelated;
-    outline: 1px solid black;
-  }
-
-  .input-color {
-    cursor: pointer;
-    position: absolute;
-    opacity: 0;
-  }
-  
-  .button {
-    padding: 0.75rem;
-    display: grid;
-    place-items: center;
-    position: relative;
-    cursor: pointer;
-    border: 0;
-    border-radius: 2px;
-    margin: 2px;
-    outline-style: solid;
-    outline-width: 2px;
-    outline-color: transparent;
-    transition: all 100ms ease-out;
-    background-color: #e5e5e5;
-
-    &:hover {
-      filter: opacity(0.72);
-    }
-
-    &:active {
-      filter: opacity(0.86);
-    }
-  }
-  
-  .icon-button {
-    fill: #404040;
-
-    &[data-select="true"] {
-      background-color: #ffffff;
-      outline-color: #0ea5e9;
-      fill: #020617;
-    }  
-  }
-
-  .color-pallet-wrapper {
-    position: relative;
-
-    &:hover .remove-color-button {
-      opacity: 1;
-    }
-  }
-
-  .color-pallet-button {
-    background-color: var(--palletColor);
-    
-    &[data-select="ture"] {
-      background-color: var(--palletColor);
-      outline: #0ea5e9 2px solid;
-    }
-
-    &[data-select="false"] {
-      span {
-        opacity: 0;
-      }
-    }
-  }
-
-  .remove-color-button {
-    position: absolute;
-    left: 0;
-    top: 0;
-    transform: translate(-50%, -50%);
-    width: 20px;
-    height: 20px;
-    display: grid;
-    place-items: center;
-    padding: 0;
-    border-radius: 50%;
-    border: 0;
-    cursor: pointer;
-    box-shadow: 0 8px 12px -3px rgb(0 0 0 / 0.2), 0 4px 6px -4px rgb(0 0 0 / 0.2);
-    background-color: #f1f5f9;
-    outline-color: #0ea5e9;
-    fill: #020617;
-    opacity: 0;
-
-    &:hover {
-      filter: brightness(1.02);
-    }
-
-    &:active {
-      filter: brightness(0.92);
-    }
-  }
-
-  .grid-button {
-    &[data-select="true"] {
-      background-color: #020617;
-      fill: #ffffff;
-    }
-  }
-
-  .row {
-    display: flex;
-    flex-flow: wrap row;
-    gap: 1rem;
-  }
-
-  #main-container {
-    display: flex;
-    justify-content: space-evenly;
-  }
-
-  #canvas-area {
-    position: relative;
-    width: var(--width);
-    height: var(--height);
-
-    canvas {
-      position: absolute;
-    }
-  }
-
-  #tools {
-    max-width: 256px;
-
-    & > * + * {
-      margin-top: 1rem;
-    }
-  }
-  
-  #clear {
-    fill: #7f1d1d;
-    background-color: #fecaca;
-    border-color: #7f1d1d;
-
-    &:hover {
-      fill: #fecaca;
-      background-color: #ef4444;
-    }
+  .visually-hidden {
+    @apply !absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0;
+    clip: rect(0, 0, 0, 0) !important;
   }
 </style>
