@@ -121,7 +121,6 @@
     updateHistory();
   };
   const onUndo = () => {
-    console.log(canUndo);
     if (!canUndo) {
       return;
     }
