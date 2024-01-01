@@ -23,8 +23,12 @@
   import { rgbToInt } from "$lib/color";
   import chroma from "chroma-js";
   import { onMount } from "svelte";
+  // Component
   import Button from "./component/button.svelte";
   import Canvas from "./component/canvas.svelte";
+  // Icon
+  import ArrowRotateLeft from "./icon/arrow-rotate-left.svg.svelte";
+  import ArrowRotateRight from "./icon/arrow-rotate-right.svg.svelte";
   import BorderNone from "./icon/border-none.svg.svelte";
   import Eraser from "./icon/eraser.svg.svelte";
   import FillDrip from "./icon/fill-drip.svg.svelte";
@@ -33,8 +37,11 @@
   import Pencil from "./icon/pencil.svg.svelte";
   import Plus from "./icon/plus.svg.svelte";
   import TrashCan from "./icon/trash-can.svg.svelte";
+  // Interaction
   import { ColorPallet } from "./interaction/color-pallet";
   import { Editor, type PixelArtEventMap } from "./interaction/editor";
+  import { History } from "./interaction/history";
+  import type { InteractiveRendererEventMap } from "./internal/interactive-renderer";
   import { PixelConverter } from "./internal/pixel-converer";
   import { createCustomEventDispatcher } from "./util/custom-event";
 
@@ -57,21 +64,7 @@
     }
   };
 
-  let canvasArea: HTMLElement;
-  let backgroundCanvas: HTMLCanvasElement;
-  let drawCanvas: HTMLCanvasElement;
-  let hoverCanvas: HTMLCanvasElement;
-  let gridCanvas: HTMLCanvasElement;
-  let previewCanvas: HTMLCanvasElement;
-  let clientWidth: number;
-  let clientHeight: number;
-  let visibleGrid: boolean;
-
-  const colorPallet = new ColorPallet();
-  let currentPallet = colorPallet.toArray();
-  let editor: Editor;
-  let colorValue: string = "#000000";
-  let pickedColor: string = colorValue;
+  const dispatch = createCustomEventDispatcher<PixelArtEventMap>(component);
 
   const tryLoadData = (pixelDataLike: NumericArray) => {
     const pixelData = Uint32Array.from(pixelDataLike);
@@ -81,18 +74,76 @@
       return false;
     }
 
-    return editor.loadPixelData(data);
+    return editor.setPixelData(data);
   };
-
-  const updatePallet = () => {
-    currentPallet = colorPallet.toArray().reverse();
-  };
-
-  const dispatch = createCustomEventDispatcher<PixelArtEventMap>(component);
 
   const onClear = () => {
     editor.clearCanvas();
     dispatch("clear");
+  };
+
+  let canvasArea: HTMLElement;
+  let backgroundCanvas: HTMLCanvasElement;
+  let drawCanvas: HTMLCanvasElement;
+  let hoverCanvas: HTMLCanvasElement;
+  let gridCanvas: HTMLCanvasElement;
+  let previewCanvas: HTMLCanvasElement;
+
+  let colorPicker: HTMLInputElement;
+
+  let clientWidth: number;
+  let clientHeight: number;
+  let visibleGrid: boolean;
+
+  let editor: Editor;
+
+  const colorPallet = new ColorPallet();
+  let currentPallet = colorPallet.toArray();
+  let colorValue: string = "#000000";
+  let pickedColor: string = colorValue;
+  const updatePallet = () => {
+    currentPallet = colorPallet.toArray().reverse();
+  };
+
+  const history = new History<string>();
+  let canUndo: boolean;
+  let canRedo: boolean;
+  const updateHistory = () => {
+    canUndo = history.canUndo();
+    canRedo = history.canRedo();
+  };
+  const restoreFromState = (historyState: string) => {
+    editor.setPixelData(Uint32Array.from(historyState.split(",").map(Number)));
+    updateHistory();
+  };
+  const setHistory = (pixelData: Uint32Array) => {
+    history.push(pixelData.join(","));
+    updateHistory();
+  };
+  const onUndo = () => {
+    if (!canUndo) {
+      return;
+    }
+
+    const historyState = history.undo();
+    if (historyState) {
+      restoreFromState(historyState);
+    }
+  };
+  const onRedo = () => {
+    if (!canRedo) {
+      return;
+    }
+
+    const historyState = history.redo();
+    if (historyState) {
+      restoreFromState(historyState);
+    }
+  };
+  const pushState = (
+    e: InteractiveRendererEventMap["clear"] | InteractiveRendererEventMap["pointerdown"]
+  ) => {
+    setHistory(e.pixelData);
   };
 
   type PaintTools = Array<{
@@ -134,6 +185,10 @@
     clientHeight = editor.clientHeight;
     visibleGrid = editor.visibleGrid;
     updatePallet();
+
+    editor.on("pointerup", pushState);
+    editor.on("clear", pushState);
+    setHistory(editor.getPixelData().pixelData);
   });
 
   $: if (editor) {
@@ -170,11 +225,12 @@
       {/each}
     </div>
     <div class="flex flex-wrap gap-4" id="colors">
-      <Button tag="label">
+      <Button on:click={() => colorPicker.click()}>
         <Plus width="24" height="24" />
         <input
           class="visually-hidden"
           type="color"
+          bind:this={colorPicker}
           bind:value={colorValue}
           on:change={() => {
             pickedColor = colorValue;
@@ -195,7 +251,7 @@
           </Button>
           {#if currentPallet.length > 1}
             <button
-              class="absolute left-0 top-0 grid h-5 w-5 -translate-x-1/2 -translate-y-1/2 cursor-pointer place-items-center rounded-full border-0 bg-slate-100 fill-slate-950 p-0 opacity-0 shadow-lg transition-all duration-75 ease-out hover:bg-slate-50 active:bg-slate-300 group-hover:opacity-100"
+              class="absolute left-0 top-0 grid h-5 w-5 -translate-x-1/2 -translate-y-1/2 cursor-pointer place-items-center rounded-full border-0 bg-slate-200 fill-slate-950 p-0 opacity-0 shadow-lg transition-all duration-75 ease-out hover:bg-slate-50 active:bg-slate-300 group-hover:opacity-100"
               on:click={() => {
                 colorPallet.remove(color);
                 updatePallet();
@@ -207,6 +263,14 @@
           {/if}
         </div>
       {/each}
+    </div>
+    <div class="flex flex-wrap gap-4" id="histories">
+      <Button on:click={onUndo} disabled={!canUndo}>
+        <ArrowRotateLeft width="24" height="24" />
+      </Button>
+      <Button on:click={onRedo} disabled={!canRedo}>
+        <ArrowRotateRight width="24" height="24" />
+      </Button>
     </div>
     <div class="flex flex-wrap gap-4" id="actions">
       <Button
