@@ -68,12 +68,11 @@ export class Editor extends InteractiveRenderer {
     this.gridCanvas.drawGrid(dotSize);
     this.backgroundCanvas.drawBackground();
 
-    this.interactiveRenderer
-      .on("pointermove", ({ x, y, rgbaInt }) => {
-        this.hoverCanvas.drawPixel(x, y, rgbaInt);
-      })
+    this.on("pointermove", ({ x, y, rgbaInt }) => {
+      this.hoverCanvas.drawPixel(x, y, rgbaInt);
+    })
       .on("render", () => {
-        const imageSource = this.interactiveRenderer.pixelRenderer.image;
+        const imageSource = this.pixelRenderer.image;
         this.drawCanvas.draw(imageSource);
         this.previewCanvas.draw(imageSource);
       })
@@ -104,7 +103,7 @@ export class Editor extends InteractiveRenderer {
       return false;
     }
 
-    this.interactiveRenderer.setPixelData(data);
+    this.storePixelData(data);
     return true;
   }
 

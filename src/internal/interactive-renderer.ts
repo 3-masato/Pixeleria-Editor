@@ -66,7 +66,7 @@ export class InteractiveRenderer extends EventDispatcher<InteractiveRendererEven
     });
   }
 
-  public setPixelData(pixelData: Uint32Array): void {
+  protected storePixelData(pixelData: Uint32Array): void {
     this.pixelRenderer.pixelData.set(pixelData, 0);
     this.render();
   }
