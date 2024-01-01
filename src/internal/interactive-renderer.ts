@@ -2,27 +2,26 @@ import type { PaintMode, Vec2 } from "$types/shared";
 import { EventDispatcher } from "../util/event";
 import { PixelRenderer } from "./pixel-renderer";
 
-type EventMap = {
-  pointerdown: {
-    x: number;
-    y: number;
-    rgbaInt: number;
-  };
-  pointermove: {
-    x: number;
-    y: number;
-    rgbaInt: number;
-  };
-  pointerup: {
-    x: number;
-    y: number;
-    rgbaInt: number;
-  };
-  render: void;
-  clear: void;
+interface InteractiveRendererPointerEvent {
+  x: number;
+  y: number;
+  rgbaInt: number;
+  pixelData: Uint32Array;
+}
+
+interface InteractiveRendererRenderEvent {
+  pixelData: Uint32Array;
+}
+
+type InteractiveRendererEventMap = {
+  pointerdown: InteractiveRendererPointerEvent;
+  pointermove: InteractiveRendererPointerEvent;
+  pointerup: InteractiveRendererPointerEvent;
+  render: InteractiveRendererRenderEvent;
+  clear: InteractiveRendererRenderEvent;
 };
 
-export class InteractiveRenderer extends EventDispatcher<EventMap> {
+export class InteractiveRenderer extends EventDispatcher<InteractiveRendererEventMap> {
   public paintMode: PaintMode = "pen";
   public colorInt: number = 0;
 
@@ -62,7 +61,9 @@ export class InteractiveRenderer extends EventDispatcher<EventMap> {
 
   public clear() {
     this.pixelRenderer.clear();
-    this.fire("clear");
+    this.fire("clear", {
+      pixelData: this.pixelRenderer.pixelData
+    });
   }
 
   public setPixelData(pixelData: Uint32Array): void {
@@ -75,10 +76,9 @@ export class InteractiveRenderer extends EventDispatcher<EventMap> {
   }
 
   private onPointerDown(e: PointerEvent): void {
-    this.setPointerEventHandlers(e);
-
     const { x, y } = this.calcPixelPosition(e);
-    this.fire("pointerdown", { x, y, rgbaInt: this.rgbaInt });
+
+    this.setPointerEventHandlers(e);
 
     if (this.paintMode === "fill") {
       this.pixelRenderer.floodFill(x, y, this.rgbaInt);
@@ -88,24 +88,46 @@ export class InteractiveRenderer extends EventDispatcher<EventMap> {
     }
 
     this.render();
+
+    this.fire("pointerdown", {
+      x,
+      y,
+      rgbaInt: this.rgbaInt,
+      pixelData: this.pixelRenderer.pixelData
+    });
   }
 
   private onPointerMove(e: PointerEvent): void {
     const { x, y } = this.calcPixelPosition(e);
-    this.fire("pointermove", { x, y, rgbaInt: this.rgbaInt });
 
     if (this.pressed) {
       this.processDrawing(x, y);
+      this.render();
     }
 
-    this.render();
+    this.fire("pointermove", {
+      x,
+      y,
+      rgbaInt: this.rgbaInt,
+      pixelData: this.pixelRenderer.pixelData
+    });
   }
 
   private onPointerUp(e: PointerEvent): void {
+    const { x, y } = this.calcPixelPosition(e);
+
+    this.removePointerEventHandlers(e);
+
     this.pressed = false;
     this.lastX = null;
     this.lastY = null;
-    this.removePointerEventHandlers(e);
+
+    this.fire("pointerup", {
+      x,
+      y,
+      rgbaInt: this.rgbaInt,
+      pixelData: this.pixelRenderer.pixelData
+    });
   }
 
   /**
@@ -128,12 +150,7 @@ export class InteractiveRenderer extends EventDispatcher<EventMap> {
    * ブレゼンハムの線分描画アルゴリズムを利用して2点間のドットを補間を行い描画する。
    * マウスを素早く動かしたときにドットが飛び飛びになるのを防ぐために使用。
    */
-  private drawInterpolatePoints(
-    x0: number,
-    y0: number,
-    x1: number,
-    y1: number
-  ): void {
+  private drawInterpolatePoints(x0: number, y0: number, x1: number, y1: number): void {
     const dx = Math.abs(x1 - x0);
     const dy = Math.abs(y1 - y0);
     const sx = x0 < x1 ? 1 : -1;
@@ -186,6 +203,8 @@ export class InteractiveRenderer extends EventDispatcher<EventMap> {
 
   private render(): void {
     this.pixelRenderer.render();
-    this.fire("render");
+    this.fire("render", {
+      pixelData: this.pixelRenderer.pixelData
+    });
   }
 }
