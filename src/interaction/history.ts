@@ -10,7 +10,7 @@ export class History<T> {
   }
 
   canUndo(): boolean {
-    return this.undoStack.length > 0;
+    return this.undoStack.length > 1;
   }
 
   canRedo(): boolean {
@@ -22,12 +22,13 @@ export class History<T> {
       return undefined;
     }
 
+    const previousState = this.undoStack.at(-2);
     const currentState = this.undoStack.pop();
-    if (typeof currentState === "undefined") {
+    if (typeof currentState === "undefined" || typeof previousState === "undefined") {
       throw new Error("Cannot undo, no more actions to undo.");
     }
     this.redoStack.push(currentState);
-    return currentState;
+    return previousState;
   }
 
   redo(): T | undefined {

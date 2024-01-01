@@ -2,20 +2,19 @@
   import { twMerge } from "tailwind-merge";
   let className: string = "";
   export { className as class };
-  export let tag = "button";
+  export let disabled = false;
 </script>
 
-<!-- svelte-ignore a11y-no-static-element-interactions -->
-<svelte:element
-  this={tag}
+<button
   class={twMerge(
-    "relative grid cursor-pointer place-items-center rounded-sm bg-neutral-200 fill-slate-700 p-3 outline outline-2 outline-transparent transition-all duration-100 hover:brightness-105 focus:ring-1 active:brightness-95",
+    "relative grid cursor-pointer place-items-center rounded-sm bg-neutral-200 fill-slate-700 p-3 outline outline-2 outline-transparent transition-all duration-100 hover:brightness-105 focus:ring-1 active:brightness-95 disabled:pointer-events-none disabled:opacity-60",
     className
   )}
   on:click
+  {disabled}
 >
   <slot />
-</svelte:element>
+</button>
 
 <!-- svelte-ignore css-unused-selector -->
 <style lang="postcss">

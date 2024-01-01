@@ -2,18 +2,18 @@ import type { PaintMode, Vec2 } from "$types/shared";
 import { EventDispatcher } from "../util/event";
 import { PixelRenderer } from "./pixel-renderer";
 
-interface InteractiveRendererPointerEvent {
+export interface InteractiveRendererPointerEvent {
   x: number;
   y: number;
   rgbaInt: number;
   pixelData: Uint32Array;
 }
 
-interface InteractiveRendererRenderEvent {
+export interface InteractiveRendererRenderEvent {
   pixelData: Uint32Array;
 }
 
-type InteractiveRendererEventMap = {
+export type InteractiveRendererEventMap = {
   pointerdown: InteractiveRendererPointerEvent;
   pointermove: InteractiveRendererPointerEvent;
   pointerup: InteractiveRendererPointerEvent;
@@ -25,7 +25,7 @@ export class InteractiveRenderer extends EventDispatcher<InteractiveRendererEven
   public paintMode: PaintMode = "pen";
   public colorInt: number = 0;
 
-  public readonly pixelRenderer: PixelRenderer;
+  protected readonly pixelRenderer: PixelRenderer;
 
   private pressed = false;
 
@@ -37,10 +37,10 @@ export class InteractiveRenderer extends EventDispatcher<InteractiveRendererEven
   private readonly boundOnPointerUp: (e: PointerEvent) => void;
 
   constructor(
-    public readonly target: HTMLElement,
-    public readonly width: number,
-    public readonly height: number,
-    public readonly dotSize: number
+    protected readonly target: HTMLElement,
+    protected readonly width: number,
+    protected readonly height: number,
+    protected readonly dotSize: number
   ) {
     super();
 
@@ -59,7 +59,7 @@ export class InteractiveRenderer extends EventDispatcher<InteractiveRendererEven
     return rgbaInt;
   }
 
-  public clear() {
+  protected clear() {
     this.pixelRenderer.clear();
     this.fire("clear", {
       pixelData: this.pixelRenderer.pixelData
