@@ -66,6 +66,11 @@ export class InteractiveRenderer extends EventDispatcher<InteractiveRendererEven
     });
   }
 
+  public setPixelData(pixelData: Uint32Array): void {
+    this.pixelRenderer.pixelData.set(pixelData, 0);
+    this.render();
+  }
+
   private setPixel(x: number, y: number): void {
     this.pixelRenderer.set(x, y, this.rgbaInt);
   }

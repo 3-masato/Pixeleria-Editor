@@ -68,17 +68,19 @@ export class Editor extends InteractiveRenderer {
     this.gridCanvas.drawGrid(dotSize);
     this.backgroundCanvas.drawBackground();
 
-    this.on("pointermove", ({ x, y, rgbaInt }) => {
-      this.hoverCanvas.drawPixel(x, y, rgbaInt);
-    });
-    this.on("render", () => {
-      this.drawCanvas.draw(this.pixelRenderer.image);
-      this.previewCanvas.draw(this.pixelRenderer.image);
-    });
-    this.on("clear", () => {
-      this.drawCanvas.clear();
-      this.previewCanvas.clear();
-    });
+    this.interactiveRenderer
+      .on("pointermove", ({ x, y, rgbaInt }) => {
+        this.hoverCanvas.drawPixel(x, y, rgbaInt);
+      })
+      .on("render", () => {
+        const imageSource = this.interactiveRenderer.pixelRenderer.image;
+        this.drawCanvas.draw(imageSource);
+        this.previewCanvas.draw(imageSource);
+      })
+      .on("clear", () => {
+        this.drawCanvas.clear();
+        this.previewCanvas.clear();
+      });
   }
 
   get visibleGrid() {
@@ -102,7 +104,7 @@ export class Editor extends InteractiveRenderer {
       return false;
     }
 
-    this.pixelRenderer.pixelData.set(data, 0);
+    this.interactiveRenderer.setPixelData(data);
     return true;
   }
 

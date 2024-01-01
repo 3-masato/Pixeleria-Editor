@@ -31,7 +31,7 @@ export class PixelRenderer extends PixelBuffer {
    * @param y 開始点の y 座標
    * @param color 塗りつぶしに使用する色
    */
-  floodFill(x: number, y: number, color: number) {
+  floodFill(x: number, y: number, color: number): void {
     if (!this.contain(x, y)) return;
 
     // 符号なし32bit整数に変換してから比較する
