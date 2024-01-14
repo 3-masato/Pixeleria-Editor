@@ -18,7 +18,7 @@
 />
 
 <script lang="ts">
-  import type { NumericArray } from "$types/shared";
+  import type { NumericArray, PaintMode } from "$types/shared";
 
   import { rgbToInt } from "$lib/color";
   import chroma from "chroma-js";
@@ -33,7 +33,7 @@
   import ColorPicker from "./editor/color-picker.svelte";
   import { tryLoadData } from "./editor/editor";
   import HistoryTool from "./editor/history-tool.svelte";
-  import { paintTools } from "./editor/tools";
+  import PaintTools from "./editor/paint-tools.svelte";
 
   import { Editor, type PixelArtEventMap } from "./interaction/editor";
   import { PixelConverter } from "./internal/pixel-converer";
@@ -78,6 +78,11 @@
   let clientHeight: number;
   let visibleGrid: boolean;
 
+  let paintTools: PaintMode;
+  const onChangeTool = (e: CustomEvent<PaintMode>) => {
+    editor.paintMode = e.detail;
+  };
+
   let historyTool: HistoryTool;
   const onRestoreState = (e: CustomEvent<Uint32Array>) => {
     editor.setPixelData(e.detail);
@@ -95,9 +100,12 @@
       height: Number(artHeight),
       dotSize
     });
+
     clientWidth = editor.clientWidth;
     clientHeight = editor.clientHeight;
     visibleGrid = editor.visibleGrid;
+
+    paintTools = editor.paintMode;
 
     editor.on("pointerup", historyTool.pushState);
     editor.on("clear", historyTool.pushState);
@@ -125,18 +133,7 @@
       <Canvas id="preview-canvas" bind:ref={previewCanvas} />
     </div>
     <div class="flex flex-wrap gap-4" id="paint-modes">
-      {#each paintTools as tool}
-        <Button
-          on:click={() => {
-            editor.paintMode = tool.mode;
-          }}
-          class={editor?.paintMode === tool.mode
-            ? "bg-slate-50 fill-slate-950 outline-sky-500"
-            : ""}
-        >
-          <svelte:component this={tool.icon} width="24" height="24" />
-        </Button>
-      {/each}
+      <PaintTools bind:currentMode={paintTools} on:change={onChangeTool} />
     </div>
     <div class="flex flex-wrap gap-4" id="colors">
       <ColorPicker on:pick={onPick} />
