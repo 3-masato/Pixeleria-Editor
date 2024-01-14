@@ -27,21 +27,15 @@
   import Button from "./component/button.svelte";
   import Canvas from "./component/canvas.svelte";
   // Icon
-  import ArrowRotateLeft from "./icon/arrow-rotate-left.svg.svelte";
-  import ArrowRotateRight from "./icon/arrow-rotate-right.svg.svelte";
   import BorderNone from "./icon/border-none.svg.svelte";
-  import Eraser from "./icon/eraser.svg.svelte";
-  import FillDrip from "./icon/fill-drip.svg.svelte";
-  import Minus from "./icon/minus.svg.svelte";
-  import Pen from "./icon/pen.svg.svelte";
-  import Pencil from "./icon/pencil.svg.svelte";
-  import Plus from "./icon/plus.svg.svelte";
   import TrashCan from "./icon/trash-can.svg.svelte";
   // Interaction
-  import { ColorPallet } from "./interaction/color-pallet";
+  import ColorPicker from "./editor/color-picker.svelte";
+  import { tryLoadData } from "./editor/editor";
+  import HistoryTool from "./editor/history-tool.svelte";
+  import PaintTools from "./editor/paint-tools.svelte";
+
   import { Editor, type PixelArtEventMap } from "./interaction/editor";
-  import { History } from "./interaction/history";
-  import type { InteractiveRendererEventMap } from "./internal/interactive-renderer";
   import { PixelConverter } from "./internal/pixel-converer";
   import { createCustomEventDispatcher } from "./util/custom-event";
 
@@ -59,23 +53,14 @@
     };
   };
   export const loadPixelData = (pixelDataLike: NumericArray) => {
-    if (!tryLoadData(pixelDataLike)) {
+    if (!tryLoadData(editor, pixelDataLike, artWidth, artHeight)) {
       alert("Invalid data.");
     }
   };
 
+  let editor: Editor;
+
   const dispatch = createCustomEventDispatcher<PixelArtEventMap>(component);
-
-  const tryLoadData = (pixelDataLike: NumericArray) => {
-    const pixelData = Uint32Array.from(pixelDataLike);
-    const { data, width, height } = PixelConverter.decompress(pixelData);
-
-    if (width !== Number(artWidth) || height !== Number(artHeight)) {
-      return false;
-    }
-
-    return editor.setPixelData(data);
-  };
 
   const onClear = () => {
     editor.clearCanvas();
@@ -89,85 +74,20 @@
   let gridCanvas: HTMLCanvasElement;
   let previewCanvas: HTMLCanvasElement;
 
-  let colorPicker: HTMLInputElement;
-
   let clientWidth: number;
   let clientHeight: number;
+
   let visibleGrid: boolean;
 
-  let editor: Editor;
-
-  const colorPallet = new ColorPallet();
-  let currentPallet = colorPallet.toArray();
-  let colorValue: string = "#000000";
-  let pickedColor: string = colorValue;
-  const updatePallet = () => {
-    currentPallet = colorPallet.toArray().reverse();
+  let paintTools: PaintMode;
+  const onChangeTool = (e: CustomEvent<PaintMode>) => {
+    editor.paintMode = e.detail;
   };
 
-  const history = new History<string>();
-  let canUndo: boolean;
-  let canRedo: boolean;
-  const updateHistory = () => {
-    canUndo = history.canUndo();
-    canRedo = history.canRedo();
+  let historyTool: HistoryTool;
+  const onRestoreState = (e: CustomEvent<Uint32Array>) => {
+    editor.setPixelData(e.detail);
   };
-  const restoreFromState = (historyState: string) => {
-    editor.setPixelData(Uint32Array.from(historyState.split(",").map(Number)));
-    updateHistory();
-  };
-  const setHistory = (pixelData: Uint32Array) => {
-    history.push(pixelData.join(","));
-    updateHistory();
-  };
-  const onUndo = () => {
-    if (!canUndo) {
-      return;
-    }
-
-    const historyState = history.undo();
-    if (historyState) {
-      restoreFromState(historyState);
-    }
-  };
-  const onRedo = () => {
-    if (!canRedo) {
-      return;
-    }
-
-    const historyState = history.redo();
-    if (historyState) {
-      restoreFromState(historyState);
-    }
-  };
-  const pushState = (
-    e: InteractiveRendererEventMap["clear"] | InteractiveRendererEventMap["pointerdown"]
-  ) => {
-    setHistory(e.pixelData);
-  };
-
-  type PaintTools = Array<{
-    id: string;
-    mode: PaintMode;
-    icon: any;
-  }>;
-  const paintTools: PaintTools = [
-    {
-      id: "pencil",
-      mode: "pen",
-      icon: Pen
-    },
-    {
-      id: "eraser",
-      mode: "erase",
-      icon: Eraser
-    },
-    {
-      id: "fill",
-      mode: "fill",
-      icon: FillDrip
-    }
-  ];
 
   onMount(() => {
     editor = new Editor({
@@ -181,22 +101,26 @@
       height: Number(artHeight),
       dotSize
     });
+
     clientWidth = editor.clientWidth;
     clientHeight = editor.clientHeight;
-    visibleGrid = editor.visibleGrid;
-    updatePallet();
 
-    editor.on("pointerup", pushState);
-    editor.on("clear", pushState);
-    setHistory(editor.getPixelData().pixelData);
+    visibleGrid = editor.visibleGrid;
+
+    paintTools = editor.paintMode;
+
+    editor.on("pointerup", historyTool.pushState);
+    editor.on("clear", historyTool.pushState);
+    historyTool.init(editor.getPixelData().pixelData);
   });
 
-  $: if (editor) {
+  const onPick = (e: CustomEvent<string>) => {
+    const pickedColor = e.detail;
     const chromaColor = chroma(pickedColor);
     const rgb = chromaColor.rgb();
     const colorInt = rgbToInt(rgb[2], rgb[1], rgb[0]);
     editor.colorInt = colorInt;
-  }
+  };
 </script>
 
 <div class="flex justify-evenly" style="--width: {clientWidth}px; --height: {clientHeight}px;">
@@ -211,66 +135,13 @@
       <Canvas id="preview-canvas" bind:ref={previewCanvas} />
     </div>
     <div class="flex flex-wrap gap-4" id="paint-modes">
-      {#each paintTools as tool}
-        <Button
-          on:click={() => {
-            editor.paintMode = tool.mode;
-          }}
-          class={editor?.paintMode === tool.mode
-            ? "bg-slate-50 fill-slate-950 outline-sky-500"
-            : ""}
-        >
-          <svelte:component this={tool.icon} width="24" height="24" />
-        </Button>
-      {/each}
+      <PaintTools bind:currentMode={paintTools} on:change={onChangeTool} />
     </div>
     <div class="flex flex-wrap gap-4" id="colors">
-      <Button on:click={() => colorPicker.click()}>
-        <Plus width="24" height="24" />
-        <input
-          class="visually-hidden"
-          type="color"
-          bind:this={colorPicker}
-          bind:value={colorValue}
-          on:change={() => {
-            pickedColor = colorValue;
-            colorPallet.push(pickedColor);
-            updatePallet();
-          }}
-        />
-      </Button>
-      {#each currentPallet as color}
-        <div class="group relative" style="--palletColor: {color}">
-          <Button
-            class={`bg-[var(--palletColor)] ${pickedColor === color ? "outline-sky-500" : ""}`}
-            on:click={() => {
-              pickedColor = color;
-            }}
-          >
-            <Pencil width="24" height="24" stroke="white" stroke-width="20" />
-          </Button>
-          {#if currentPallet.length > 1}
-            <button
-              class="absolute left-0 top-0 grid h-5 w-5 -translate-x-1/2 -translate-y-1/2 cursor-pointer place-items-center rounded-full border-0 bg-slate-200 fill-slate-950 p-0 opacity-0 shadow-lg transition-all duration-75 ease-out hover:bg-slate-50 active:bg-slate-300 group-hover:opacity-100"
-              on:click={() => {
-                colorPallet.remove(color);
-                updatePallet();
-                pickedColor = colorPallet.currentColor;
-              }}
-            >
-              <Minus width="8" height="8" />
-            </button>
-          {/if}
-        </div>
-      {/each}
+      <ColorPicker on:pick={onPick} />
     </div>
     <div class="flex flex-wrap gap-4" id="histories">
-      <Button on:click={onUndo} disabled={!canUndo}>
-        <ArrowRotateLeft width="24" height="24" />
-      </Button>
-      <Button on:click={onRedo} disabled={!canRedo}>
-        <ArrowRotateRight width="24" height="24" />
-      </Button>
+      <HistoryTool bind:this={historyTool} on:restoreState={onRestoreState} />
     </div>
     <div class="flex flex-wrap gap-4" id="actions">
       <Button
@@ -301,10 +172,5 @@
 
   :host {
     @apply block w-full max-w-[1920px];
-  }
-
-  .visually-hidden {
-    @apply !absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0;
-    clip: rect(0, 0, 0, 0) !important;
   }
 </style>
