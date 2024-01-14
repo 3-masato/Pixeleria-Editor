@@ -76,6 +76,7 @@
 
   let clientWidth: number;
   let clientHeight: number;
+
   let visibleGrid: boolean;
 
   let paintTools: PaintMode;
@@ -103,6 +104,7 @@
 
     clientWidth = editor.clientWidth;
     clientHeight = editor.clientHeight;
+
     visibleGrid = editor.visibleGrid;
 
     paintTools = editor.paintMode;
