@@ -27,17 +27,15 @@
   import Button from "./component/button.svelte";
   import Canvas from "./component/canvas.svelte";
   // Icon
-  import ArrowRotateLeft from "./icon/arrow-rotate-left.svg.svelte";
-  import ArrowRotateRight from "./icon/arrow-rotate-right.svg.svelte";
   import BorderNone from "./icon/border-none.svg.svelte";
   import TrashCan from "./icon/trash-can.svg.svelte";
   // Interaction
   import ColorPicker from "./editor/color-picker.svelte";
   import { tryLoadData } from "./editor/editor";
+  import HistoryTool from "./editor/history-tool.svelte";
   import { paintTools } from "./editor/tools";
+
   import { Editor, type PixelArtEventMap } from "./interaction/editor";
-  import { History } from "./interaction/history";
-  import type { InteractiveRendererEventMap } from "./internal/interactive-renderer";
   import { PixelConverter } from "./internal/pixel-converer";
   import { createCustomEventDispatcher } from "./util/custom-event";
 
@@ -76,51 +74,13 @@
   let gridCanvas: HTMLCanvasElement;
   let previewCanvas: HTMLCanvasElement;
 
-  let colorPicker: HTMLInputElement;
-
   let clientWidth: number;
   let clientHeight: number;
   let visibleGrid: boolean;
 
-  const history = new History<string>();
-  let canUndo: boolean;
-  let canRedo: boolean;
-  const updateHistory = () => {
-    canUndo = history.canUndo();
-    canRedo = history.canRedo();
-  };
-  const restoreFromState = (historyState: string) => {
-    editor.setPixelData(Uint32Array.from(historyState.split(",").map(Number)));
-    updateHistory();
-  };
-  const setHistory = (pixelData: Uint32Array) => {
-    history.push(pixelData.join(","));
-    updateHistory();
-  };
-  const onUndo = () => {
-    if (!canUndo) {
-      return;
-    }
-
-    const historyState = history.undo();
-    if (historyState) {
-      restoreFromState(historyState);
-    }
-  };
-  const onRedo = () => {
-    if (!canRedo) {
-      return;
-    }
-
-    const historyState = history.redo();
-    if (historyState) {
-      restoreFromState(historyState);
-    }
-  };
-  const pushState = (
-    e: InteractiveRendererEventMap["clear"] | InteractiveRendererEventMap["pointerdown"]
-  ) => {
-    setHistory(e.pixelData);
+  let historyTool: HistoryTool;
+  const onRestoreState = (e: CustomEvent<Uint32Array>) => {
+    editor.setPixelData(e.detail);
   };
 
   onMount(() => {
@@ -139,9 +99,9 @@
     clientHeight = editor.clientHeight;
     visibleGrid = editor.visibleGrid;
 
-    editor.on("pointerup", pushState);
-    editor.on("clear", pushState);
-    setHistory(editor.getPixelData().pixelData);
+    editor.on("pointerup", historyTool.pushState);
+    editor.on("clear", historyTool.pushState);
+    historyTool.init(editor.getPixelData().pixelData);
   });
 
   const onPick = (e: CustomEvent<string>) => {
@@ -182,12 +142,7 @@
       <ColorPicker on:pick={onPick} />
     </div>
     <div class="flex flex-wrap gap-4" id="histories">
-      <Button on:click={onUndo} disabled={!canUndo}>
-        <ArrowRotateLeft width="24" height="24" />
-      </Button>
-      <Button on:click={onRedo} disabled={!canRedo}>
-        <ArrowRotateRight width="24" height="24" />
-      </Button>
+      <HistoryTool bind:this={historyTool} on:restoreState={onRestoreState} />
     </div>
     <div class="flex flex-wrap gap-4" id="actions">
       <Button
