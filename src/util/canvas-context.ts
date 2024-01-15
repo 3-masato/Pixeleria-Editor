@@ -1,8 +1,14 @@
-export const getCanvasContext = (
-  canvas: HTMLCanvasElement,
+/**
+ * canvas要素から2Dコンテキストを取得し、そのコンテキストとキャンバス自体を含むオブジェクトを返します。
+ *
+ * @param canvas
+ * @param contextOption
+ */
+export const getCanvasContext = <Canvas extends HTMLCanvasElement>(
+  canvas: Canvas,
   contextOption?: CanvasRenderingContext2DSettings
 ): {
-  canvas: HTMLCanvasElement;
+  canvas: Canvas;
   ctx: CanvasRenderingContext2D;
 } => {
   const ctx = canvas.getContext("2d", contextOption);

@@ -1,5 +1,5 @@
 import type { PaintMode, Vec2 } from "$types/shared";
-import { EventDispatcher } from "../util/event";
+import { EventDispatcher } from "../util/event-dispatcher";
 import { PixelRenderer } from "./pixel-renderer";
 
 export interface InteractiveRendererPointerEvent {
