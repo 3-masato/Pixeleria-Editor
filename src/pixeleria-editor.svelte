@@ -89,6 +89,10 @@
     editor.setPixelData(e.detail);
   };
 
+  const hotkeyMap: Record<string, Function> = {
+    z: onUndo,
+    y: onRedo
+  };
   onMount(() => {
     editor = new Editor({
       canvasArea,
@@ -122,6 +126,14 @@
     editor.colorInt = colorInt;
   };
 </script>
+
+<svelte:body
+  on:keydown={(e) => {
+    if (e.ctrlKey) {
+      hotkeyMap[e.key]?.();
+    }
+  }}
+/>
 
 <div class="flex justify-evenly" style="--width: {clientWidth}px; --height: {clientHeight}px;">
   <div class="relative h-[var(--height)] w-[var(--width)]" id="canvas-area" bind:this={canvasArea}>
