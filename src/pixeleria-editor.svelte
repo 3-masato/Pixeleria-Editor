@@ -124,6 +124,9 @@
   };
 </script>
 
+<!-- 離脱防止用イベント -->
+<svelte:window on:beforeunload|preventDefault={(e) => (e.returnValue = "")} />
+
 <div class="flex justify-evenly" style="--width: {clientWidth}px; --height: {clientHeight}px;">
   <div class="relative h-[var(--height)] w-[var(--width)]" id="canvas-area" bind:this={canvasArea}>
     <Canvas id="background-canvas" bind:ref={backgroundCanvas} class="absolute" />
