@@ -1,0 +1,10 @@
+{
+  "pen": "ペン",
+  "erase": "消しゴム",
+  "fill": "塗りつぶし",
+  "addColor": "色を追加",
+  "undo": "元に戻す (ctrl+z)",
+  "redo": "やり直す (ctrl+y)",
+  "grid": "グリッド",
+  "clearCanvas": "キャンバスをクリア"
+}

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from "svelte";
   import Button from "../component/button.svelte";
+  import Text from "../config/text.json";
   import Minus from "../icon/minus.svg.svelte";
   import Pencil from "../icon/pencil.svg.svelte";
   import Plus from "../icon/plus.svg.svelte";
@@ -29,7 +30,7 @@
   });
 </script>
 
-<Button on:click={() => colorPicker.click()}>
+<Button help={Text.addColor} on:click={() => colorPicker.click()}>
   <Plus width="24" height="24" />
   <input
     class="visually-hidden"
@@ -47,6 +48,7 @@
   <div class="group relative" style="--palletColor: {color}">
     <Button
       class={`bg-[var(--palletColor)] ${pickedColor === color ? "outline-sky-500" : ""}`}
+      help={color}
       on:click={() => {
         pickedColor = color;
       }}
@@ -55,7 +57,7 @@
     </Button>
     {#if currentPallet.length > 1}
       <button
-        class="absolute left-0 top-0 grid h-5 w-5 -translate-x-1/2 -translate-y-1/2 cursor-pointer place-items-center rounded-full border-0 bg-slate-200 fill-slate-950 p-0 opacity-0 shadow-lg transition-all duration-75 ease-out hover:bg-slate-50 active:bg-slate-300 group-hover:opacity-100"
+        class="absolute bottom-0 right-0 grid h-5 w-5 translate-x-1/2 translate-y-1/2 cursor-pointer place-items-center rounded-full border border-slate-300 bg-slate-200 fill-slate-950 p-0 opacity-0 shadow-lg transition-all duration-75 ease-out hover:bg-slate-50 active:bg-slate-300 group-hover:opacity-100"
         on:click={() => {
           colorPallet.remove(color);
           updatePallet();
