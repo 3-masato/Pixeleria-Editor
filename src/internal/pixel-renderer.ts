@@ -1,25 +1,35 @@
 import { PixelCanvas } from "../canvas/pixel-canvas";
 import { PixelBuffer } from "./pixel-buffer";
 
+/**
+ * ピクセルデータを操作し、描画を行うクラス。
+ */
 export class PixelRenderer extends PixelBuffer {
   private readonly vCanvas: PixelCanvas;
 
+  /**
+   * @param width レンダラの幅
+   * @param height レンダラの高さ
+   */
   constructor(width: number, height: number) {
     super(width, height);
 
-    this.vCanvas = new PixelCanvas(
-      document.createElement("canvas"),
-      width,
-      height,
-      1,
-      { willReadFrequently: true }
-    );
+    this.vCanvas = new PixelCanvas(document.createElement("canvas"), width, height, 1, {
+      willReadFrequently: true
+    });
   }
 
+  /**
+   * レンダリングされたイメージを取得します。
+   * @readonly
+   */
   get image(): CanvasImageSource {
     return this.vCanvas.canvas;
   }
 
+  /**
+   * キャンバスをクリアします。
+   */
   clear(): void {
     super.clear();
     this.vCanvas.clear();
@@ -70,6 +80,9 @@ export class PixelRenderer extends PixelBuffer {
     }
   }
 
+  /**
+   * ピクセルデータをキャンバスに描画します。
+   */
   render(): void {
     const ctx = this.vCanvas.ctx;
     const imageData = ctx.createImageData(this.width, this.height);
@@ -80,6 +93,12 @@ export class PixelRenderer extends PixelBuffer {
     ctx.putImageData(imageData, 0, 0);
   }
 
+  /**
+   * キャンバスの内容をデータ URL として取得します。
+   * @param type - イメージの形式。
+   * @param quality - イメージの品質（形式が 'image/jpeg' または 'image/webp' の場合のみ）。
+   * @returns - データURL。
+   */
   toDataURL(type?: string, quality?: any): string {
     const canvas = this.vCanvas.canvas;
     return canvas.toDataURL(type, quality);
