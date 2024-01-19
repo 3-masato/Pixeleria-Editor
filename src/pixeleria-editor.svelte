@@ -23,6 +23,7 @@
   import { rgbToInt } from "$lib/color";
   import chroma from "chroma-js";
   import { onMount } from "svelte";
+  import Text from "./config/text.json";
   // Component
   import Button from "./component/button.svelte";
   import Canvas from "./component/canvas.svelte";
@@ -89,10 +90,6 @@
     editor.setPixelData(e.detail);
   };
 
-  const hotkeyMap: Record<string, Function> = {
-    z: onUndo,
-    y: onRedo
-  };
   onMount(() => {
     editor = new Editor({
       canvasArea,
@@ -127,14 +124,6 @@
   };
 </script>
 
-<svelte:body
-  on:keydown={(e) => {
-    if (e.ctrlKey) {
-      hotkeyMap[e.key]?.();
-    }
-  }}
-/>
-
 <div class="flex justify-evenly" style="--width: {clientWidth}px; --height: {clientHeight}px;">
   <div class="relative h-[var(--height)] w-[var(--width)]" id="canvas-area" bind:this={canvasArea}>
     <Canvas id="background-canvas" bind:ref={backgroundCanvas} class="absolute" />
@@ -158,6 +147,7 @@
     <div class="flex flex-wrap gap-4" id="actions">
       <Button
         class={visibleGrid ? "bg-slate-900 fill-slate-50" : ""}
+        help={Text.grid}
         on:click={() => {
           visibleGrid = editor.toggleVisibleGrid();
         }}
@@ -166,6 +156,7 @@
       </Button>
       <Button
         class="border border-red-900 bg-red-100 fill-red-800 hover:bg-red-800 hover:fill-red-100"
+        help={Text.clearCanvas}
         on:click={onClear}
       >
         <TrashCan width="24" height="24" />

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
   import Button from "../component/button.svelte";
+  import Text from "../config/text.json";
   import ArrowRotateLeft from "../icon/arrow-rotate-left.svg.svelte";
   import ArrowRotateRight from "../icon/arrow-rotate-right.svg.svelte";
   import { History } from "../interaction/history";
@@ -14,8 +15,6 @@
   const updateHistory = () => {
     canUndo = history.canUndo();
     canRedo = history.canRedo();
-
-    console.log(history);
   };
 
   const restoreFromState = (historyState: string) => {
@@ -50,6 +49,11 @@
     }
   };
 
+  const hotkeyMap: Record<string, Function> = {
+    z: onUndo,
+    y: onRedo
+  };
+
   export const pushState = (
     e: InteractiveRendererEventMap["clear"] | InteractiveRendererEventMap["pointerdown"]
   ) => {
@@ -61,9 +65,17 @@
   };
 </script>
 
-<Button on:click={onUndo} disabled={!canUndo}>
+<svelte:body
+  on:keydown={(e) => {
+    if (e.ctrlKey) {
+      hotkeyMap[e.key]?.();
+    }
+  }}
+/>
+
+<Button help={Text.undo} on:click={onUndo} disabled={!canUndo}>
   <ArrowRotateLeft width="24" height="24" />
 </Button>
-<Button on:click={onRedo} disabled={!canRedo}>
+<Button help={Text.redo} on:click={onRedo} disabled={!canRedo}>
   <ArrowRotateRight width="24" height="24" />
 </Button>
